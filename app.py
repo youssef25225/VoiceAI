@@ -38,6 +38,28 @@ st.markdown("""
     --shadow:     0 2px 12px rgba(0,0,0,.4);
 }
 
+/* Light mode overrides */
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg:         #f4f6fb;
+        --surface:    #ffffff;
+        --surface2:   #f0f2f8;
+        --surface3:   #e8ecf5;
+        --border:     #dde1ee;
+        --border-lt:  #c8cfe0;
+        --accent:     #3a6aef;
+        --accent2:    #2a56d6;
+        --accent-dim: rgba(58,106,239,.07);
+        --accent-glow:rgba(58,106,239,.18);
+        --muted:      #8a94a8;
+        --text:       #111827;
+        --text-dim:   #4b5563;
+        --green:      #0e9e6e;
+        --amber:      #c47d0a;
+        --shadow:     0 2px 12px rgba(0,0,0,.08);
+    }
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 html, body, [class*="css"] {
@@ -232,7 +254,6 @@ audio {
     border-radius: var(--radius-sm) !important;
     height: 36px !important;
     width: 100% !important;
-    filter: invert(0.85) hue-rotate(195deg) saturate(0.8) !important;
 }
 
 .empty-state {
@@ -258,6 +279,7 @@ audio {
 </style>
 """, unsafe_allow_html=True)
 
+# ── Session State ──────────────────────────────────────────────────────────────
 if "chat"        not in st.session_state: st.session_state.chat = []
 if "user_id"     not in st.session_state: st.session_state.user_id = "default_user"
 if "profile"     not in st.session_state: st.session_state.profile = load_voice_profile(st.session_state.user_id)
@@ -266,6 +288,7 @@ if "audio_key"   not in st.session_state: st.session_state.audio_key = 0
 if "enroll_key"  not in st.session_state: st.session_state.enroll_key = 0
 if "last_sample" not in st.session_state: st.session_state.last_sample = None
 
+# ── Top Bar ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="top-bar">
     <div class="brand">
@@ -286,6 +309,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# ── Voice Enrollment ───────────────────────────────────────────────────────────
 vc_title = "Voice Cloning — Active" if st.session_state.profile else "Voice Cloning — No profile"
 with st.expander(vc_title, expanded=not st.session_state.profile):
     st.markdown('<div class="section-label">User Profile</div>', unsafe_allow_html=True)
@@ -329,6 +353,7 @@ with st.expander(vc_title, expanded=not st.session_state.profile):
 
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
+# ── Mode Controls ──────────────────────────────────────────────────────────────
 c1, c2, c3, _ = st.columns([1, 1, 1, 2])
 with c1:
     if st.button("Text Mode", use_container_width=True, key="btn_text"):
@@ -353,6 +378,7 @@ st.markdown(f"""
 
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
+# ── Chat History ───────────────────────────────────────────────────────────────
 if not st.session_state.chat:
     st.markdown("""
     <div class="empty-state">
@@ -363,16 +389,19 @@ if not st.session_state.chat:
 else:
     for m in st.session_state.chat:
         with st.chat_message(m["role"]):
-            st.write(m["content"])
+            # صوت بس — مفيش text
             if m.get("audio"):
                 st.audio(m["audio"], format="audio/wav")
 
+# ── Text Mode ──────────────────────────────────────────────────────────────────
 if st.session_state.input_mode == "text":
     prompt = st.chat_input("Message VoiceAI...")
     if prompt:
         st.session_state.chat.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
-            st.write(prompt)
+            if st.session_state.chat[-1].get("audio"):
+                st.audio(st.session_state.chat[-1]["audio"], format="audio/wav")
+
         with st.chat_message("assistant"):
             with st.spinner("Generating response..."):
                 try:
@@ -390,15 +419,19 @@ if st.session_state.input_mode == "text":
                     )
                     res.raise_for_status()
                     data = res.json()
-                    reply = data.get("reply", "")
-                    audio_hex = data.get("audio")
+                    audio_hex   = data.get("audio")
                     audio_bytes = bytes.fromhex(audio_hex) if audio_hex else None
                 except Exception as e:
-                    reply = f"API error: {e}"
+                    st.error(f"API error: {e}")
                     audio_bytes = None
-        st.session_state.chat.append({"role": "assistant", "content": reply, "audio": audio_bytes})
+
+            if audio_bytes:
+                st.audio(audio_bytes, format="audio/wav")
+
+        st.session_state.chat.append({"role": "assistant", "audio": audio_bytes})
         st.rerun()
 
+# ── Voice Mode ─────────────────────────────────────────────────────────────────
 else:
     st.markdown('<div class="voice-banner">Voice Mode — Record your message then press Send</div>', unsafe_allow_html=True)
     audio_msg = st.audio_input("Record", key=f"voice_{st.session_state.audio_key}", label_visibility="collapsed")
@@ -421,17 +454,16 @@ else:
                     if "error" in data:
                         st.error(data["error"])
                         st.stop()
-                    user_text   = data.get("text", "")
-                    reply       = data.get("reply", "")
                     audio_hex   = data.get("audio")
                     audio_bytes = bytes.fromhex(audio_hex) if audio_hex else None
                 except Exception as e:
                     st.error(f"API error: {e}")
                     st.stop()
-            if user_text:
-                st.session_state.chat.append({"role": "user", "content": user_text})
-                st.session_state.chat.append({"role": "assistant", "content": reply, "audio": audio_bytes})
+
+            if audio_bytes:
+                st.session_state.chat.append({"role": "user",      "audio": None})
+                st.session_state.chat.append({"role": "assistant", "audio": audio_bytes})
                 st.session_state.audio_key += 1
                 st.rerun()
             else:
-                st.warning("No speech detected. Please try again.")
+                st.warning("No audio received. Please try again.")
