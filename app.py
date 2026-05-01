@@ -1,5 +1,6 @@
 import io
 import time
+import base64
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Tuple
 
@@ -191,8 +192,13 @@ if st.session_state.chat_history:
     for i, msg in enumerate(st.session_state.chat_history):
         with st.chat_message(msg.role):
             st.markdown(msg.content)
-            if msg.audio and i == len(st.session_state.chat_history) - 1:
-                st.audio(msg.audio, format="audio/mp3", autoplay=True)
+            if msg.audio:
+                audio_b64 = base64.b64encode(msg.audio).decode()
+                autoplay = "autoplay" if i == len(st.session_state.chat_history) - 1 else ""
+                st.markdown(
+                    f'<audio {autoplay} controls><source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3"></audio>',
+                    unsafe_allow_html=True
+                )
             if msg.error:
                 st.caption("⚠ error")
 
