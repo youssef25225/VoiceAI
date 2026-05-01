@@ -143,16 +143,11 @@ class VoiceProfileManager:
             return load_voice_profile(user_id)
         except ImportError:
             return None
-        except Exception:
-            return None
 
     @staticmethod
     def save_profile(user_id: str, audio_data: Any, sample_rate: int) -> Any:
-        try:
-            from src.core.enroll import save_voice_profile
-            return save_voice_profile(user_id, audio_data, sample_rate)
-        except Exception as e:
-            raise Exception(f"Failed to save voice profile: {str(e)}")
+        from src.core.enroll import save_voice_profile
+        return save_voice_profile(user_id, audio_data, sample_rate)
 
 
 THEME_CSS = """
@@ -618,7 +613,7 @@ class UI:
         <div style="text-align: center; padding: 4rem 2rem; animation: fadeIn 0.5s ease-out;">
             <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; animation: float 3s ease-in-out infinite;">💬</div>
             <div style="font-size: 1.25rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem;">Start a conversation</div>
-            <div style="font-size: 0.9rem; color: var(--text-secondary); max-width: 300px; margin: 0 auto; line-height: 1.5;">Type a message or switch to Voice Mode to speak naturally with the assistant</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); max-width: 300px; margin: 0 auto; line-height: 1.5;">Type a message or switch to Voice Mode to speak naturally with the assistant.</div>
         </div>
         """, unsafe_allow_html=True)
 
