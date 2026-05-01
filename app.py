@@ -119,33 +119,47 @@ def add_msg(msg: ChatMessage):
         st.session_state.chat_history = st.session_state.chat_history[-MAX_HISTORY * 2:]
 
 
-def render_sidebar(client: VoiceAIClient):
+@st.cache_data(ttl=30, show_spinner=False)
+def cached_health_check(base_url: str) -> bool:
+    try:
+        r = requests.get(f"{base_url}/health", timeout=5)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def render_sidebar():
     with st.sidebar:
         st.title("VoiceAI")
         st.divider()
-        online = client.health_check()
+
+        online = cached_health_check(API_URL)
         if online:
             st.success("API online")
         else:
             st.error("API offline")
+
         st.divider()
+
         lang_keys = list(SUPPORTED_LANGS.keys())
-        lang_vals = list(SUPPORTED_LANGS.values())
+        lang_vals  = list(SUPPORTED_LANGS.values())
         idx = lang_keys.index(st.session_state.lang)
         sel = st.selectbox("Language", lang_vals, index=idx)
         new_lang = lang_keys[lang_vals.index(sel)]
         if new_lang != st.session_state.lang:
             st.session_state.lang = new_lang
             st.rerun()
+
         st.divider()
+
         if st.session_state.user_name:
             st.write(f"Logged in as: **{st.session_state.user_name}**")
             st.caption(f"ID: {st.session_state.user_id}")
             st.caption(f"Messages: {len(st.session_state.chat_history)}")
             if st.button("Logout", use_container_width=True):
-                st.session_state.user_id = None
-                st.session_state.user_name = None
-                st.session_state.app_state = AppState.LANDING
+                st.session_state.user_id    = None
+                st.session_state.user_name  = None
+                st.session_state.app_state  = AppState.LANDING
                 st.session_state.chat_history = []
                 st.rerun()
             if st.button("Clear Chat", use_container_width=True):
@@ -166,26 +180,28 @@ def screen_landing():
         if st.button("Login with Voice", use_container_width=True, type="primary", key="btn_login"):
             st.session_state.app_state = AppState.LOGGING_IN
             st.session_state.audio_key += 1
+            st.rerun()
     with col2:
         st.subheader("New User")
         st.write("First time? Register your voice print now.")
         if st.button("Enroll My Voice", use_container_width=True, key="btn_enroll"):
             st.session_state.app_state = AppState.ENROLLING
             st.session_state.enroll_key += 1
+            st.rerun()
 
 
 def screen_enroll(client: VoiceAIClient):
     st.title("New User Enrollment")
-    if st.button("Back", key="enroll_back"):
+    if st.button("← Back", key="enroll_back"):
         st.session_state.app_state = AppState.LANDING
         st.rerun()
     st.divider()
     col1, col2 = st.columns(2)
     with col1:
-        uid = st.text_input("User ID (no spaces)", placeholder="e.g. ahmed_01")
+        uid  = st.text_input("User ID (no spaces)", placeholder="e.g. ahmed_01")
     with col2:
         name = st.text_input("Display Name", placeholder="e.g. Ahmed")
-    st.write("Record a clear voice sample (5-30 seconds):")
+    st.write("Record a clear voice sample (5–30 seconds):")
     sample = st.audio_input("Voice sample", key=f"enroll_{st.session_state.enroll_key}")
     if st.button("Enroll and Login", type="primary", use_container_width=True, key="enroll_submit"):
         if not uid or not name:
@@ -199,7 +215,7 @@ def screen_enroll(client: VoiceAIClient):
         if err:
             st.error(f"Enrollment failed: {err}")
         else:
-            st.session_state.user_id = uid
+            st.session_state.user_id   = uid
             st.session_state.user_name = name
             st.session_state.app_state = AppState.CHATTING
             st.rerun()
@@ -207,7 +223,7 @@ def screen_enroll(client: VoiceAIClient):
 
 def screen_login(client: VoiceAIClient):
     st.title("Voice Login")
-    if st.button("Back", key="login_back"):
+    if st.button("← Back", key="login_back"):
         st.session_state.app_state = AppState.LANDING
         st.rerun()
     st.divider()
@@ -219,12 +235,12 @@ def screen_login(client: VoiceAIClient):
         with st.spinner("Identifying your voice..."):
             uid, uname, err = client.identify(audio.getvalue())
         if err:
-            st.error(f"{err}")
+            st.error(err)
             return
         if not uid:
             st.warning("Voice not recognised. Haven't enrolled yet? Go back and choose Enroll My Voice.")
             return
-        st.session_state.user_id = uid
+        st.session_state.user_id   = uid
         st.session_state.user_name = uname or uid
         st.session_state.app_state = AppState.CHATTING
         st.rerun()
@@ -241,7 +257,8 @@ def screen_chat(client: VoiceAIClient):
                 if msg.audio:
                     st.audio(msg.audio, format="audio/wav", autoplay=True)
                 if msg.error:
-                    st.caption("error")
+                    st.caption("⚠ error")
+
     prompt = st.chat_input("Type your message...")
     if prompt and prompt.strip():
         add_msg(ChatMessage(role="user", content=prompt.strip()))
@@ -259,11 +276,11 @@ def screen_chat(client: VoiceAIClient):
         st.rerun()
 
 
-# ── Main ───────────────────────────────────────
+# ── Main ───────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="VoiceAI", page_icon="🎤", layout="wide")
 init_state()
 client = VoiceAIClient(API_URL)
-render_sidebar(client)
+render_sidebar()
 
 state = st.session_state.app_state
 if state == AppState.LANDING:
