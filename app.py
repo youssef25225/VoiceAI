@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Any, Tuple
 from enum import Enum, auto
+from datetime import datetime
 
 import streamlit as st
 import soundfile as sf
@@ -12,6 +13,12 @@ API_URL = "https://yousefemam-voiceai.hf.space"
 MAX_HISTORY = 20
 REQUEST_TIMEOUT = 120
 SUPPORTED_LANGS = {"ar": "Arabic", "en": "English", "fr": "French"}
+CONVERSATION_STARTERS = [
+    "Tell me a joke",
+    "What's the weather today?",
+    "Help me with a question",
+    "Let's have a conversation"
+]
 
 
 class InputMode(Enum):
@@ -47,6 +54,8 @@ class SessionState:
             "last_health_check": 0,
             "show_export": False,
             "voice_recorded": False,
+            "last_request_time": 0,
+            "api_error_count": 0,
         }
         for key, val in defaults.items():
             if key not in st.session_state:
@@ -56,12 +65,17 @@ class SessionState:
     def clear_chat():
         st.session_state.chat_history = []
         st.session_state.show_export = False
+        st.session_state.api_error_count = 0
 
     @staticmethod
     def add_message(msg: ChatMessage):
         st.session_state.chat_history.append(msg)
         if len(st.session_state.chat_history) > MAX_HISTORY * 2:
             st.session_state.chat_history = st.session_state.chat_history[-MAX_HISTORY * 2:]
+
+    @staticmethod
+    def get_message_count() -> int:
+        return len(st.session_state.chat_history)
 
 
 class VoiceAIClient:
@@ -80,35 +94,51 @@ class VoiceAIClient:
         except Exception:
             return False
 
-    def send_text(self, history: List[Dict], lang: str, user_id: str) -> Tuple[Optional[bytes], Optional[str]]:
-        resp = self.session.post(
-            f"{self.base_url}/text",
-            json={"history": history, "lang": lang, "user_id": user_id},
-            timeout=REQUEST_TIMEOUT
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        audio_hex = data.get("audio")
-        audio = bytes.fromhex(audio_hex) if audio_hex else None
-        text = data.get("text") or data.get("response") or data.get("message")
-        return audio, text
+    def send_text(self, history: List[Dict], lang: str, user_id: str) -> Tuple[Optional[bytes], Optional[str], Optional[str]]:
+        try:
+            resp = self.session.post(
+                f"{self.base_url}/text",
+                json={"history": history, "lang": lang, "user_id": user_id},
+                timeout=REQUEST_TIMEOUT
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            audio_hex = data.get("audio")
+            audio = bytes.fromhex(audio_hex) if audio_hex else None
+            text = data.get("text") or data.get("response") or data.get("message")
+            return audio, text, None
+        except requests.exceptions.Timeout:
+            return None, None, "Request timed out. The server might be busy. Please try again."
+        except requests.exceptions.ConnectionError:
+            return None, None, "Cannot connect to the VoiceAI server. Please check your internet connection."
+        except requests.exceptions.HTTPError as e:
+            return None, None, f"Server error: {e.response.status_code}. Please try again."
+        except Exception as e:
+            return None, None, f"An unexpected error occurred: {str(e)}"
 
     def send_voice(self, audio_bytes: bytes, user_id: str) -> Tuple[Optional[bytes], Optional[str], Optional[str]]:
-        files = {"file": ("audio.wav", io.BytesIO(audio_bytes), "audio/wav")}
-        resp = self.session.post(
-            f"{self.base_url}/voice",
-            files=files,
-            params={"user_id": user_id},
-            timeout=REQUEST_TIMEOUT
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        if "error" in data:
-            return None, None, data["error"]
-        audio_hex = data.get("audio")
-        audio = bytes.fromhex(audio_hex) if audio_hex else None
-        text = data.get("text") or data.get("response") or data.get("message")
-        return audio, text, None
+        try:
+            files = {"file": ("audio.wav", io.BytesIO(audio_bytes), "audio/wav")}
+            resp = self.session.post(
+                f"{self.base_url}/voice",
+                files=files,
+                params={"user_id": user_id},
+                timeout=REQUEST_TIMEOUT
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            if "error" in data:
+                return None, None, data["error"]
+            audio_hex = data.get("audio")
+            audio = bytes.fromhex(audio_hex) if audio_hex else None
+            text = data.get("text") or data.get("response") or data.get("message")
+            return audio, text, None
+        except requests.exceptions.Timeout:
+            return None, None, "Request timed out. Please try again."
+        except requests.exceptions.ConnectionError:
+            return None, None, "Connection failed. Please check your internet."
+        except Exception as e:
+            return None, None, f"Error: {str(e)}"
 
 
 class VoiceProfileManager:
@@ -246,6 +276,7 @@ html, body, [class*="css"] {
     border-radius: 99px;
     color: var(--text-secondary);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex-wrap: wrap;
 }
 .status-pill:hover {
     border-color: var(--border-active);
@@ -290,6 +321,8 @@ html, body, [class*="css"] {
     color: var(--text) !important;
     box-shadow: var(--shadow-sm) !important;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 .stChatMessage > div:last-child:hover {
     box-shadow: var(--shadow) !important;
@@ -330,6 +363,7 @@ div[data-testid="stChatMessage"]:has(svg[data-testid="chatAvatarIcon-assistant"]
     font-size: 0.95rem !important;
     box-shadow: var(--shadow) !important;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    resize: none !important;
 }
 [data-testid="stChatInput"] textarea:focus {
     border-color: var(--accent) !important;
@@ -413,8 +447,32 @@ audio::-webkit-media-controls-panel {
     font-size: 0.9rem;
     color: var(--text-secondary) !important;
     max-width: 300px;
-    margin: 0 auto;
+    margin: 0 auto 1.5rem;
     line-height: 1.5;
+}
+
+.starter-suggestions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.starter-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.starter-btn:hover {
+    border-color: var(--accent);
+    background: var(--accent-dim);
+    color: var(--accent-light);
 }
 
 .stExpander {
@@ -472,6 +530,13 @@ audio::-webkit-media-controls-panel {
     margin: 1.5rem 0;
 }
 
+.message-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    text-align: center;
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -523,6 +588,19 @@ audio::-webkit-media-controls-panel {
 .stAlert [data-testid="stMarkdownContainer"] p {
     color: var(--text) !important;
 }
+
+@media (max-width: 600px) {
+    .block-container {
+        padding: 1.5rem 1rem 8rem !important;
+    }
+    .status-pill {
+        font-size: 0.7rem !important;
+        padding: 6px 12px !important;
+    }
+    .stChatMessage > div:last-child {
+        max-width: 95% !important;
+    }
+}
 </style>
 """
 
@@ -563,9 +641,10 @@ class UI:
     def render_empty_state():
         st.html("""
         <div class="empty-state">
-            <div class="empty-icon">+</div>
+            <div class="empty-icon">💬</div>
             <div class="empty-title">Start a conversation</div>
             <div class="empty-sub">Type a message or switch to Voice Mode to speak naturally with the assistant.</div>
+            <div class="starter-suggestions" id="starters"></div>
         </div>
         """)
 
@@ -573,7 +652,7 @@ class UI:
     def render_voice_banner():
         st.html("""
         <div class="voice-banner">
-            Voice Mode Active - Record your message and press Send
+            🎤 Voice Mode Active - Record your message and press Send
         </div>
         """)
 
@@ -591,7 +670,6 @@ class UI:
 
     @staticmethod
     def format_timestamp(ts: float) -> str:
-        from datetime import datetime
         return datetime.fromtimestamp(ts).strftime("%H:%M")
 
     @staticmethod
@@ -610,14 +688,21 @@ class UI:
             with st.chat_message("assistant"):
                 st.markdown(msg.content)
                 if msg.error:
-                    st.error("An error occurred generating the response.")
+                    st.error("❌ An error occurred generating the response.")
                 st.html(f'<div class="msg-timestamp">{UI.format_timestamp(msg.timestamp)}</div>')
 
 
 def handle_text_input(client: VoiceAIClient):
     prompt = st.chat_input("Message VoiceAI...", key="chat_text_input")
     if prompt and prompt.strip():
-        user_msg = ChatMessage(role="user", content=prompt.strip())
+        prompt = prompt.strip()
+        
+        # Validate input length
+        if len(prompt) > 5000:
+            st.error("Message is too long. Please keep it under 5000 characters.")
+            return
+
+        user_msg = ChatMessage(role="user", content=prompt)
         SessionState.add_message(user_msg)
 
         history = [
@@ -625,43 +710,31 @@ def handle_text_input(client: VoiceAIClient):
             for m in st.session_state.chat_history[-MAX_HISTORY:]
         ]
 
-        try:
-            with st.spinner("Generating response..."):
-                audio_bytes, text_response = client.send_text(
-                    history,
-                    st.session_state.lang,
-                    st.session_state.user_id
-                )
+        with st.spinner("✨ Generating response..."):
+            audio_bytes, text_response, error = client.send_text(
+                history,
+                st.session_state.lang,
+                st.session_state.user_id
+            )
 
-            if audio_bytes or text_response:
-                assistant_msg = ChatMessage(
-                    role="assistant",
-                    content=text_response or "Voice response generated",
-                    audio=audio_bytes
-                )
-            else:
-                assistant_msg = ChatMessage(
-                    role="assistant",
-                    content="I could not generate a response. Please try again.",
-                    error=True
-                )
-
-        except requests.exceptions.Timeout:
+        if error:
+            st.session_state.api_error_count += 1
             assistant_msg = ChatMessage(
                 role="assistant",
-                content="Request timed out. The server might be busy.",
+                content=error,
                 error=True
             )
-        except requests.exceptions.ConnectionError:
+        elif audio_bytes or text_response:
+            st.session_state.api_error_count = 0
             assistant_msg = ChatMessage(
                 role="assistant",
-                content="Cannot connect to the VoiceAI server. Please check your connection.",
-                error=True
+                content=text_response or "Voice response generated",
+                audio=audio_bytes
             )
-        except Exception as e:
+        else:
             assistant_msg = ChatMessage(
                 role="assistant",
-                content=f"An unexpected error occurred: {str(e)}",
+                content="I could not generate a response. Please try again.",
                 error=True
             )
 
@@ -690,7 +763,7 @@ def handle_voice_input(client: VoiceAIClient):
             st.rerun()
 
         if send:
-            with st.spinner("Transcribing and generating response..."):
+            with st.spinner("🎤 Transcribing and generating response..."):
                 try:
                     audio_bytes = audio_msg.getvalue()
                     response_audio, response_text, error = client.send_voice(
@@ -699,10 +772,12 @@ def handle_voice_input(client: VoiceAIClient):
                     )
 
                     if error:
-                        st.error(f"Error: {error}")
+                        st.error(f"❌ {error}")
+                        st.session_state.api_error_count += 1
                         return
 
                     if response_audio or response_text:
+                        st.session_state.api_error_count = 0
                         assistant_msg = ChatMessage(
                             role="assistant",
                             content=response_text or "Voice response generated",
@@ -713,14 +788,11 @@ def handle_voice_input(client: VoiceAIClient):
                         st.session_state.voice_recorded = False
                         st.rerun()
                     else:
-                        st.warning("No response received from the server.")
+                        st.warning("⚠️ No response received from the server.")
 
-                except requests.exceptions.Timeout:
-                    st.error("Request timed out. Please try again.")
-                except requests.exceptions.ConnectionError:
-                    st.error("Connection failed. Please check your internet.")
                 except Exception as e:
-                    st.error(f"Error: {str(e)}")
+                    st.error(f"❌ Error: {str(e)}")
+                    st.session_state.api_error_count += 1
 
 
 def render_controls(client: VoiceAIClient):
@@ -728,27 +800,27 @@ def render_controls(client: VoiceAIClient):
 
     with ctrl1:
         btn_type = "primary" if st.session_state.input_mode == InputMode.TEXT else "secondary"
-        if st.button("Text", use_container_width=True, key="btn_text", type=btn_type):
+        if st.button("📝 Text", use_container_width=True, key="btn_text", type=btn_type):
             st.session_state.input_mode = InputMode.TEXT
             st.rerun()
 
     with ctrl2:
         btn_type = "primary" if st.session_state.input_mode == InputMode.VOICE else "secondary"
-        if st.button("Voice", use_container_width=True, key="btn_voice", type=btn_type):
+        if st.button("🎤 Voice", use_container_width=True, key="btn_voice", type=btn_type):
             st.session_state.input_mode = InputMode.VOICE
             st.rerun()
 
     with ctrl3:
-        if st.button("Clear Chat", use_container_width=True, key="btn_clear"):
+        if st.button("🗑️ Clear Chat", use_container_width=True, key="btn_clear"):
             SessionState.clear_chat()
             st.rerun()
 
     with ctrl4:
-        if st.button("Export Chat", use_container_width=True, key="btn_export"):
+        if st.button("📥 Export Chat", use_container_width=True, key="btn_export"):
             if st.session_state.chat_history:
                 st.session_state.show_export = True
             else:
-                st.toast("No messages to export", icon="W")
+                st.toast("No messages to export", icon="⚠️")
 
     if st.session_state.show_export:
         export_data = "\n\n".join([
@@ -756,7 +828,7 @@ def render_controls(client: VoiceAIClient):
             for m in st.session_state.chat_history
         ])
         st.download_button(
-            "Download Chat",
+            "📥 Download Chat",
             export_data,
             file_name=f"voiceai_chat_{int(time.time())}.txt",
             mime="text/plain",
@@ -764,9 +836,14 @@ def render_controls(client: VoiceAIClient):
             key="download_chat_btn"
         )
 
+    # Display message count
+    msg_count = SessionState.get_message_count()
+    if msg_count > 0:
+        st.html(f'<div class="message-count">Messages: {msg_count}</div>')
+
 
 def render_voice_cloning_section():
-    vc_title = "Voice Cloning - Active" if st.session_state.profile else "Voice Cloning - No Profile"
+    vc_title = "🎯 Voice Cloning - Active" if st.session_state.profile else "🎯 Voice Cloning - No Profile"
     with st.expander(vc_title, expanded=not st.session_state.profile):
         st.html("<h4>User Profile</h4>")
         uid_col, lang_col = st.columns([2, 1])
@@ -778,7 +855,7 @@ def render_voice_cloning_section():
                 placeholder="Enter unique user ID",
                 help="Your voice profile is tied to this ID"
             )
-            if new_uid != st.session_state.user_id:
+            if new_uid and new_uid != st.session_state.user_id:
                 st.session_state.user_id = new_uid
                 st.session_state.profile = VoiceProfileManager.load_profile(new_uid)
                 st.rerun()
@@ -810,33 +887,33 @@ def render_voice_cloning_section():
             c1, c2, c3, c4 = st.columns([1, 1, 1, 2])
 
             with c1:
-                if st.button("Replay", use_container_width=True, key="replay"):
-                    st.toast("Playing sample...", icon="S")
+                if st.button("▶️ Replay", use_container_width=True, key="replay"):
+                    st.toast("Playing sample...", icon="🔊")
 
             with c2:
-                if st.button("Re-record", use_container_width=True, key="rerecord"):
+                if st.button("🔄 Re-record", use_container_width=True, key="rerecord"):
                     st.session_state.last_sample = None
                     st.session_state.enroll_key += 1
                     st.rerun()
 
             with c3:
-                if st.button("Clear", use_container_width=True, key="clear_sample"):
+                if st.button("🗑️ Clear", use_container_width=True, key="clear_sample"):
                     st.session_state.last_sample = None
                     st.rerun()
 
             with c4:
-                if st.button("Enroll Voice", use_container_width=True, key="enroll_btn", type="primary"):
+                if st.button("✅ Enroll Voice", use_container_width=True, key="enroll_btn", type="primary"):
                     with st.spinner("Processing voice profile... This may take a moment"):
                         try:
                             data, sr = sf.read(io.BytesIO(st.session_state.last_sample))
                             st.session_state.profile = VoiceProfileManager.save_profile(
                                 st.session_state.user_id, data, sr
                             )
-                            st.success("Voice enrolled successfully.")
+                            st.success("✅ Voice enrolled successfully.")
                             time.sleep(0.5)
                             st.rerun()
                         except Exception as e:
-                            st.error(f"Enrollment failed: {str(e)}")
+                            st.error(f"❌ Enrollment failed: {str(e)}")
 
         if st.session_state.profile:
             st.html(
@@ -863,6 +940,7 @@ def main():
     SessionState.init()
     client = VoiceAIClient(API_URL)
 
+    # Health check less frequently
     if time.time() - st.session_state.last_health_check > 30:
         st.session_state.api_status = client.health_check()
         st.session_state.last_health_check = time.time()
