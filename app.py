@@ -1,4 +1,3 @@
-```python
 import io
 import streamlit as st
 import soundfile as sf
@@ -358,4 +357,3 @@ else:
                 st.rerun()
             else:
                 st.warning("No audio received. Please try again.")
-```
