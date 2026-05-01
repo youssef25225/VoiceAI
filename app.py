@@ -273,6 +273,8 @@ def render_sidebar():
 # ─────────────────────────────────────────  screens
 
 def screen_landing():
+    st.write("DEBUG: screen_landing called")
+    st.button("TEST BUTTON")
     st.markdown("""
     <div class="card">
       <h3>Welcome to VoiceAI</h3>
