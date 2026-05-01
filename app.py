@@ -284,8 +284,8 @@ if not st.session_state.chat:
     </div>""", unsafe_allow_html=True)
 else:
     for m in st.session_state.chat:
-        if m.get("audio"):
-            with st.chat_message(m["role"]):
+        if m["role"] == "assistant" and m.get("audio"):
+            with st.chat_message("assistant"):
                 st.audio(m["audio"], format="audio/wav")
 
 if st.session_state.input_mode == "text":
@@ -315,7 +315,8 @@ if st.session_state.input_mode == "text":
                 st.error(f"API error: {e}")
                 audio_bytes = None
 
-        st.session_state.chat.append({"role": "assistant", "audio": audio_bytes})
+        if audio_bytes:
+            st.session_state.chat.append({"role": "assistant", "audio": audio_bytes})
         st.rerun()
 
 else:
@@ -347,7 +348,6 @@ else:
                     st.stop()
 
             if audio_bytes:
-                st.session_state.chat.append({"role": "user",      "audio": None})
                 st.session_state.chat.append({"role": "assistant", "audio": audio_bytes})
                 st.session_state.audio_key += 1
                 st.rerun()
