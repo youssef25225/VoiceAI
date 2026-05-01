@@ -15,201 +15,216 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
 
 :root {
-    --bg:         #f8faff;
-    --surface:    #ffffff;
-    --surface2:   #f0f4ff;
-    --border:     #e2e8f7;
-    --accent:     #1d4ed8;
-    --accent-lt:  #3b82f6;
-    --accent-bg:  #eff6ff;
-    --muted:      #94a3b8;
-    --text:       #0f172a;
-    --text-dim:   #475569;
-    --green:      #059669;
-    --green-bg:   #ecfdf5;
-    --amber:      #d97706;
-    --amber-bg:   #fffbeb;
-    --radius:     16px;
-    --radius-sm:  10px;
-    --shadow:     0 1px 3px rgba(15,23,42,.06), 0 4px 16px rgba(15,23,42,.04);
-    --shadow-md:  0 4px 24px rgba(29,78,216,.10);
+    --bg:         #080a0f;
+    --surface:    #0e1117;
+    --surface2:   #141820;
+    --surface3:   #1a1f2e;
+    --border:     #1e2435;
+    --border-lt:  #2a3148;
+    --accent:     #4f7cff;
+    --accent2:    #7c9fff;
+    --accent-dim: rgba(79,124,255,.08);
+    --accent-glow:rgba(79,124,255,.20);
+    --muted:      #4a5568;
+    --text:       #e8ecf4;
+    --text-dim:   #8892a4;
+    --green:      #2dd4a0;
+    --amber:      #f5a623;
+    --radius:     14px;
+    --radius-sm:  9px;
+    --shadow:     0 2px 12px rgba(0,0,0,.4);
 }
 
+*, *::before, *::after { box-sizing: border-box; }
+
 html, body, [class*="css"] {
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     background: var(--bg) !important;
     color: var(--text) !important;
 }
 
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding: 2rem 3rem 5rem !important; max-width: 860px !important; margin: 0 auto !important; }
+.block-container {
+    padding: 2.5rem 3rem 6rem !important;
+    max-width: 820px !important;
+    margin: 0 auto !important;
+}
 [data-testid="stSidebar"] { display: none !important; }
 
-::-webkit-scrollbar { width: 5px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-lt); border-radius: 99px; }
 
-.vai-top {
+.top-bar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 0 2rem;
-    border-bottom: 1px solid var(--border);
+    padding-bottom: 2rem;
     margin-bottom: 2rem;
+    border-bottom: 1px solid var(--border);
 }
-.vai-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.vai-icon {
-    width: 42px; height: 42px;
-    background: var(--accent);
+.brand { display: flex; align-items: center; gap: 13px; }
+.brand-icon {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), #7c9fff);
     border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 20px;
-    box-shadow: var(--shadow-md);
+    font-size: 21px;
+    box-shadow: 0 0 24px var(--accent-glow);
 }
-.vai-name {
+.brand-name {
     font-family: 'Instrument Serif', serif !important;
-    font-size: 1.5rem;
-    font-weight: 400;
-    color: var(--accent);
+    font-size: 1.55rem;
+    color: var(--text);
     letter-spacing: -0.01em;
+    line-height: 1;
 }
-.vai-sub {
-    font-size: 0.72rem;
+.brand-sub {
+    font-size: 0.67rem;
     color: var(--muted);
-    letter-spacing: 0.06em;
     text-transform: uppercase;
+    letter-spacing: 0.1em;
     font-weight: 500;
+    margin-top: 3px;
 }
-.vai-status {
+.status-pill {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     color: var(--text-dim);
     background: var(--surface);
     border: 1px solid var(--border);
-    padding: 6px 14px;
+    padding: 7px 15px;
     border-radius: 99px;
-    box-shadow: var(--shadow);
 }
-.vai-dot {
+.status-dot {
     width: 7px; height: 7px;
-    border-radius: 50%;
     background: var(--green);
-    box-shadow: 0 0 0 2px var(--green-bg);
+    border-radius: 50%;
+    box-shadow: 0 0 6px var(--green);
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: .4; }
 }
 
-.section-card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 1.4rem 1.6rem;
-    margin-bottom: 1.2rem;
-    box-shadow: var(--shadow);
-}
-.section-title {
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.4rem 0; }
+
+.section-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--muted);
-    margin-bottom: 1rem;
+    margin-bottom: 10px;
 }
 
 .badge {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 5px 12px; border-radius: 99px;
-    font-size: 0.76rem; font-weight: 600;
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 5px 13px; border-radius: 99px;
+    font-size: 0.74rem; font-weight: 500;
 }
-.badge-green { background: var(--green-bg); color: var(--green); border: 1px solid #a7f3d0; }
-.badge-amber { background: var(--amber-bg); color: var(--amber); border: 1px solid #fde68a; }
-.badge-blue  { background: var(--accent-bg); color: var(--accent); border: 1px solid #bfdbfe; }
+.badge-green { background: rgba(45,212,160,.08); color: var(--green); border: 1px solid rgba(45,212,160,.2); }
+.badge-amber { background: rgba(245,166,35,.08); color: var(--amber); border: 1px solid rgba(245,166,35,.2); }
+.badge-blue  { background: var(--accent-dim); color: var(--accent2); border: 1px solid rgba(79,124,255,.2); }
 .badge-dot   { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+.voice-banner {
+    background: var(--accent-dim);
+    border: 1px solid rgba(79,124,255,.18);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 0.83rem;
+    color: var(--accent2);
+    font-weight: 500;
+    margin-bottom: 1rem;
+}
 
 [data-testid="stChatMessage"] {
     background: transparent !important;
     border: none !important;
-    padding: 6px 0 !important;
+    padding: 5px 0 !important;
 }
 .stChatMessage > div:last-child {
     background: var(--surface) !important;
     border: 1px solid var(--border) !important;
     border-radius: var(--radius) !important;
-    padding: 14px 18px !important;
-    font-size: 0.93rem !important;
+    padding: 13px 17px !important;
+    font-size: 0.92rem !important;
     line-height: 1.65 !important;
-    max-width: 78% !important;
+    max-width: 76% !important;
     box-shadow: var(--shadow) !important;
     color: var(--text) !important;
 }
 div[class*="stChatMessage"]:has([data-testid="chatAvatarIcon-user"]) .stChatMessage > div:last-child {
-    background: var(--accent-bg) !important;
-    border-color: #bfdbfe !important;
+    background: var(--surface3) !important;
+    border-color: var(--border-lt) !important;
 }
 
 [data-testid="stChatInput"] textarea {
     background: var(--surface) !important;
-    border: 1.5px solid var(--border) !important;
+    border: 1px solid var(--border-lt) !important;
     border-radius: var(--radius) !important;
     color: var(--text) !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 0.93rem !important;
+    font-family: 'Geist', sans-serif !important;
+    font-size: 0.92rem !important;
 }
 [data-testid="stChatInput"] textarea:focus {
-    border-color: var(--accent-lt) !important;
-    box-shadow: 0 0 0 3px rgba(59,130,246,.12) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
 }
+[data-testid="stChatInput"] textarea::placeholder { color: var(--muted) !important; }
 
 .stButton > button {
-    background: var(--surface) !important;
-    border: 1.5px solid var(--border) !important;
+    background: var(--surface2) !important;
+    border: 1px solid var(--border-lt) !important;
     color: var(--text-dim) !important;
     border-radius: var(--radius-sm) !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
-    font-size: 0.82rem !important;
-    font-weight: 600 !important;
+    font-family: 'Geist', sans-serif !important;
+    font-size: 0.81rem !important;
+    font-weight: 500 !important;
     padding: 8px 16px !important;
-    transition: all .18s !important;
+    transition: all .15s ease !important;
 }
 .stButton > button:hover {
     background: var(--accent) !important;
     border-color: var(--accent) !important;
     color: #fff !important;
-    box-shadow: var(--shadow-md) !important;
+    box-shadow: 0 4px 20px var(--accent-glow) !important;
     transform: translateY(-1px) !important;
 }
+.stButton > button:active { transform: translateY(0) !important; }
 
 [data-testid="stTextInput"] input {
-    background: var(--surface) !important;
-    border: 1.5px solid var(--border) !important;
+    background: var(--surface2) !important;
+    border: 1px solid var(--border-lt) !important;
     border-radius: var(--radius-sm) !important;
     color: var(--text) !important;
-    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-family: 'Geist', sans-serif !important;
     font-size: 0.88rem !important;
 }
 [data-testid="stTextInput"] input:focus {
-    border-color: var(--accent-lt) !important;
-    box-shadow: 0 0 0 3px rgba(59,130,246,.12) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
 }
+[data-testid="stTextInput"] input::placeholder { color: var(--muted) !important; }
 
 [data-testid="stAudioInput"] {
-    background: var(--accent-bg) !important;
-    border: 1.5px dashed #bfdbfe !important;
+    background: var(--surface2) !important;
+    border: 1px dashed var(--border-lt) !important;
     border-radius: var(--radius) !important;
 }
 
 [data-testid="stAlert"] {
-    background: var(--surface) !important;
+    background: var(--surface2) !important;
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-sm) !important;
-    font-size: 0.83rem !important;
+    font-size: 0.82rem !important;
     color: var(--text-dim) !important;
 }
 
@@ -217,32 +232,28 @@ audio {
     border-radius: var(--radius-sm) !important;
     height: 36px !important;
     width: 100% !important;
+    filter: invert(0.85) hue-rotate(195deg) saturate(0.8) !important;
 }
 
 .empty-state {
     display: flex; flex-direction: column;
     align-items: center; justify-content: center;
-    gap: 10px; padding: 70px 20px;
-    text-align: center;
+    gap: 10px; padding: 80px 20px; text-align: center;
 }
-.empty-icon { font-size: 2.8rem; opacity: .25; }
-.empty-title {
-    font-family: 'Instrument Serif', serif;
-    font-size: 1.2rem;
-    color: var(--text-dim);
-}
-.empty-sub { font-size: 0.84rem; color: var(--muted); max-width: 280px; line-height: 1.6; }
+.empty-icon { font-size: 2.6rem; opacity: .2; }
+.empty-title { font-family: 'Instrument Serif', serif; font-size: 1.15rem; color: var(--text-dim); }
+.empty-sub { font-size: 0.83rem; color: var(--muted); max-width: 260px; line-height: 1.6; }
 
-.divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 1.2rem 0;
+[data-testid="stExpander"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
 }
-
-.mode-bar {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+[data-testid="stExpander"] summary {
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: var(--text-dim) !important;
+    padding: 14px 18px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -255,28 +266,29 @@ if "audio_key"   not in st.session_state: st.session_state.audio_key = 0
 if "enroll_key"  not in st.session_state: st.session_state.enroll_key = 0
 if "last_sample" not in st.session_state: st.session_state.last_sample = None
 
-profile_label = "Voice Cloned" if st.session_state.profile else "Default Voice"
-mode_label    = st.session_state.input_mode.title() + " Mode"
-
 st.markdown(f"""
-<div class="vai-top">
-    <div class="vai-brand">
-        <div class="vai-icon">🎙️</div>
+<div class="top-bar">
+    <div class="brand">
+        <div class="brand-icon">🎙️</div>
         <div>
-            <div class="vai-name">VoiceAI</div>
-            <div class="vai-sub">Intelligent Voice Assistant</div>
+            <div class="brand-name">VoiceAI</div>
+            <div class="brand-sub">Intelligent Voice Assistant</div>
         </div>
     </div>
-    <div class="vai-status">
-        <span class="vai-dot"></span>
-        {st.session_state.user_id} &nbsp;·&nbsp; {mode_label} &nbsp;·&nbsp; {profile_label}
+    <div class="status-pill">
+        <span class="status-dot"></span>
+        {st.session_state.user_id}
+        &nbsp;·&nbsp;
+        {st.session_state.input_mode.title()} Mode
+        &nbsp;·&nbsp;
+        {"Voice Cloned" if st.session_state.profile else "Default Voice"}
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-with st.expander("Voice Cloning" + (" — Active" if st.session_state.profile else ""), expanded=not st.session_state.profile):
-    st.markdown('<div class="section-title">Enroll your voice</div>', unsafe_allow_html=True)
-
+vc_title = "Voice Cloning — Active" if st.session_state.profile else "Voice Cloning — No profile"
+with st.expander(vc_title, expanded=not st.session_state.profile):
+    st.markdown('<div class="section-label">User Profile</div>', unsafe_allow_html=True)
     uid_col, _ = st.columns([1, 2])
     with uid_col:
         uid = st.text_input("User ID", value=st.session_state.user_id, placeholder="Enter user ID")
@@ -285,6 +297,7 @@ with st.expander("Voice Cloning" + (" — Active" if st.session_state.profile el
             st.session_state.profile = load_voice_profile(uid)
 
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
+    st.markdown('<div class="section-label">Voice Sample</div>', unsafe_allow_html=True)
 
     _v = st.audio_input("Record sample", key=f"enroll_{st.session_state.enroll_key}", label_visibility="collapsed")
     if _v:
@@ -310,25 +323,33 @@ with st.expander("Voice Cloning" + (" — Active" if st.session_state.profile el
                 st.rerun()
 
     if st.session_state.profile:
-        st.markdown(f'<div class="badge badge-green"><span class="badge-dot"></span> Profile active for {uid}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="badge badge-green" style="margin-top:8px;"><span class="badge-dot"></span> Profile active for {uid}</div>', unsafe_allow_html=True)
     else:
-        st.markdown('<div class="badge badge-amber"><span class="badge-dot"></span> Using default voice</div>', unsafe_allow_html=True)
+        st.markdown('<div class="badge badge-amber" style="margin-top:8px;"><span class="badge-dot"></span> Using default voice</div>', unsafe_allow_html=True)
 
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
-m_col1, m_col2, m_col3 = st.columns([1, 1, 4])
-with m_col1:
+c1, c2, c3, _ = st.columns([1, 1, 1, 2])
+with c1:
     if st.button("Text Mode", use_container_width=True, key="btn_text"):
         st.session_state.input_mode = "text"
         st.rerun()
-with m_col2:
+with c2:
     if st.button("Voice Mode", use_container_width=True, key="btn_voice"):
         st.session_state.input_mode = "voice"
         st.rerun()
-with m_col3:
-    if st.button("Clear conversation", use_container_width=True, key="btn_clear"):
+with c3:
+    if st.button("Clear Chat", use_container_width=True, key="btn_clear"):
         st.session_state.chat = []
         st.rerun()
+
+mode_color = "#4f7cff" if st.session_state.input_mode == "text" else "#7c9fff"
+st.markdown(f"""
+<div class="badge badge-blue" style="margin-top:10px;border-color:{mode_color}33;background:{mode_color}10;color:{mode_color};">
+    <span class="badge-dot" style="background:{mode_color};box-shadow:0 0 5px {mode_color};"></span>
+    {st.session_state.input_mode.title()} Mode Active
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
@@ -348,12 +369,10 @@ else:
 
 if st.session_state.input_mode == "text":
     prompt = st.chat_input("Message VoiceAI...")
-
     if prompt:
         st.session_state.chat.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.write(prompt)
-
         with st.chat_message("assistant"):
             with st.spinner("Generating response..."):
                 try:
@@ -377,19 +396,12 @@ if st.session_state.input_mode == "text":
                 except Exception as e:
                     reply = f"API error: {e}"
                     audio_bytes = None
-
         st.session_state.chat.append({"role": "assistant", "content": reply, "audio": audio_bytes})
         st.rerun()
 
 else:
-    st.markdown("""
-    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;
-                padding:12px 16px;font-size:0.84rem;color:#1d4ed8;margin-bottom:1rem;font-weight:500;">
-        Voice Mode — Record your message then press Send
-    </div>""", unsafe_allow_html=True)
-
+    st.markdown('<div class="voice-banner">Voice Mode — Record your message then press Send</div>', unsafe_allow_html=True)
     audio_msg = st.audio_input("Record", key=f"voice_{st.session_state.audio_key}", label_visibility="collapsed")
-
     if audio_msg:
         col_send, _ = st.columns([1, 3])
         with col_send:
@@ -406,20 +418,16 @@ else:
                     )
                     res.raise_for_status()
                     data = res.json()
-
                     if "error" in data:
                         st.error(data["error"])
                         st.stop()
-
                     user_text   = data.get("text", "")
                     reply       = data.get("reply", "")
                     audio_hex   = data.get("audio")
                     audio_bytes = bytes.fromhex(audio_hex) if audio_hex else None
-
                 except Exception as e:
                     st.error(f"API error: {e}")
                     st.stop()
-
             if user_text:
                 st.session_state.chat.append({"role": "user", "content": user_text})
                 st.session_state.chat.append({"role": "assistant", "content": reply, "audio": audio_bytes})
