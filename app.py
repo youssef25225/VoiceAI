@@ -192,7 +192,7 @@ if st.session_state.chat_history:
         with st.chat_message(msg.role):
             st.markdown(msg.content)
             if msg.audio:
-                st.audio(msg.audio, format="audio/wav", autoplay=True)
+                st.audio(msg.audio, format="audio/mp3", autoplay=True)
             if msg.error:
                 st.caption("⚠ error")
 
