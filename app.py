@@ -35,7 +35,7 @@ class SessionState:
             "chat_history": [],
             "user_id": "default_user",
             "profile": None,
-            "input_mode": InputMode.TEXT,
+            "input_mode": InputMode.TEXT,  # Default to TEXT mode
             "audio_key": 0,
             "enroll_key": 0,
             "last_sample": None,
@@ -74,7 +74,8 @@ class VoiceAIClient:
         except Exception:
             return False
 
-    def send_text(self, history: List[Dict], lang: str, user_id: str) -> Optional[bytes]:
+    def send_text(self, history: List[Dict], lang: str, user_id: str) -> tuple[Optional[bytes], Optional[str]]:
+        """Returns (audio_bytes, text_response)"""
         resp = self.session.post(
             f"{self.base_url}/text",
             json={"history": history, "lang": lang, "user_id": user_id},
@@ -83,7 +84,9 @@ class VoiceAIClient:
         resp.raise_for_status()
         data = resp.json()
         audio_hex = data.get("audio")
-        return bytes.fromhex(audio_hex) if audio_hex else None
+        audio = bytes.fromhex(audio_hex) if audio_hex else None
+        text = data.get("text") or data.get("response") or data.get("message")
+        return audio, text
 
     def send_voice(self, audio_bytes: bytes, user_id: str) -> tuple[Optional[bytes], Optional[str]]:
         files = {"file": ("audio.wav", io.BytesIO(audio_bytes), "audio/wav")}
@@ -683,6 +686,8 @@ class UI:
     def render_chat_message(msg: ChatMessage):
         if msg.role == "assistant" and msg.audio:
             with st.chat_message("assistant"):
+                if msg.content:
+                    st.markdown(msg.content)
                 st.audio(msg.audio, format="audio/wav")
                 st.html(f'<div class="msg-timestamp">{UI.format_timestamp(msg.timestamp)}</div>')
         elif msg.role == "user" and msg.content:
@@ -863,43 +868,55 @@ def main():
         if prompt and prompt.strip():
             user_msg = ChatMessage(role="user", content=prompt.strip())
             SessionState.add_message(user_msg)
-            with st.spinner(""):
-                try:
-                    history = [
-                        m.to_api_dict()
-                        for m in st.session_state.chat_history[-MAX_HISTORY:]
-                    ]
-                    audio_bytes = client.send_text(
+
+            # Prepare history for API
+            history = [
+                m.to_api_dict()
+                for m in st.session_state.chat_history[-MAX_HISTORY:]
+            ]
+
+            # Call API and handle response
+            try:
+                with st.spinner("Generating response..."):
+                    audio_bytes, text_response = client.send_text(
                         history,
                         st.session_state.lang,
                         st.session_state.user_id
                     )
-                    if audio_bytes:
-                        assistant_msg = ChatMessage(role="assistant", audio=audio_bytes)
-                    else:
-                        assistant_msg = ChatMessage(
-                            role="assistant",
-                            content="I couldn't generate a voice response. Please try again.",
-                            error=True
-                        )
-                except requests.exceptions.Timeout:
+
+                # Create assistant message with both text and audio
+                if audio_bytes or text_response:
                     assistant_msg = ChatMessage(
                         role="assistant",
-                        content="Request timed out. The server might be busy.",
-                        error=True
+                        content=text_response or "*Voice response generated*",
+                        audio=audio_bytes
                     )
-                except requests.exceptions.ConnectionError:
+                else:
                     assistant_msg = ChatMessage(
                         role="assistant",
-                        content="Cannot connect to the VoiceAI server. Please check your connection.",
+                        content="I couldn't generate a response. Please try again.",
                         error=True
                     )
-                except Exception as e:
-                    assistant_msg = ChatMessage(
-                        role="assistant",
-                        content=f"An unexpected error occurred: {str(e)}",
-                        error=True
-                    )
+
+            except requests.exceptions.Timeout:
+                assistant_msg = ChatMessage(
+                    role="assistant",
+                    content="Request timed out. The server might be busy.",
+                    error=True
+                )
+            except requests.exceptions.ConnectionError:
+                assistant_msg = ChatMessage(
+                    role="assistant",
+                    content="Cannot connect to the VoiceAI server. Please check your connection.",
+                    error=True
+                )
+            except Exception as e:
+                assistant_msg = ChatMessage(
+                    role="assistant",
+                    content=f"An unexpected error occurred: {str(e)}",
+                    error=True
+                )
+
             SessionState.add_message(assistant_msg)
             st.rerun()
     else:
