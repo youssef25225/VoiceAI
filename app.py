@@ -14,8 +14,8 @@ REQUEST_TIMEOUT = 120
 SUPPORTED_LANGS = {"ar": "العربية", "en": "English", "fr": "Français"}
 
 class InputMode(Enum):
-    TEXT = auto()
-    VOICE = auto()
+   TEXT = auto()
+   VOICE = auto()
 
 @dataclass
 class ChatMessage:
