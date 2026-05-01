@@ -321,7 +321,7 @@ with st.sidebar:
 
     # User ID
     st.markdown('<div class="sb-label">User ID</div>', unsafe_allow_html=True)
-    uid = st.text_input("", value=st.session_state.user_id, label_visibility="collapsed", placeholder="Enter user ID…")
+    uid = st.text_input("User ID", value=st.session_state.user_id, label_visibility="collapsed", placeholder="Enter user ID…")
     if uid != st.session_state.user_id:
         st.session_state.user_id = uid
         st.session_state.profile = load_voice_profile(uid)
