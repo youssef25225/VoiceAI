@@ -188,11 +188,15 @@ if st.session_state.user_name:
     st.title(f"Hello, {st.session_state.user_name} 👋")
 
 if st.session_state.chat_history:
-    for msg in st.session_state.chat_history:
+    for i, msg in enumerate(st.session_state.chat_history):
         with st.chat_message(msg.role):
             st.markdown(msg.content)
             if msg.audio:
-                st.audio(msg.audio, format="audio/mp3", autoplay=True)
+                st.audio(
+                    msg.audio,
+                    format="audio/mp3",
+                    autoplay=(i == len(st.session_state.chat_history) - 1)
+                )
             if msg.error:
                 st.caption("⚠ error")
 
