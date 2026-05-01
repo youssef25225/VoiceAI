@@ -457,5 +457,4 @@ def main():
         screen_chat(client)
 
 
-if __name__ == "__main__":
-    main()
+main()
