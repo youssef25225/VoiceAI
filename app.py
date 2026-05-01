@@ -447,14 +447,19 @@ def main():
     render_topbar(client)
 
     state = st.session_state.app_state
-    if state == AppState.LANDING:
-        screen_landing()
-    elif state == AppState.ENROLLING:
-        screen_enroll(client)
-    elif state == AppState.LOGGING_IN:
-        screen_login(client)
-    elif state == AppState.CHATTING:
-        screen_chat(client)
+    try:
+        if state == AppState.LANDING:
+            screen_landing()
+        elif state == AppState.ENROLLING:
+            screen_enroll(client)
+        elif state == AppState.LOGGING_IN:
+            screen_login(client)
+        elif state == AppState.CHATTING:
+            screen_chat(client)
+    except Exception as e:
+        import traceback
+        st.error(f"Error: {e}")
+        st.code(traceback.format_exc())
 
 
 main()
