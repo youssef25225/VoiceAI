@@ -18,49 +18,51 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
 
 :root {
-    --bg:         #080a0f;
-    --surface:    #0e1117;
-    --surface2:   #141820;
-    --surface3:   #1a1f2e;
-    --border:     #1e2435;
-    --border-lt:  #2a3148;
-    --accent:     #4f7cff;
-    --accent2:    #7c9fff;
+    --bg: #080a0f;
+    --surface: #0e1117;
+    --surface2: #141820;
+    --surface3: #1a1f2e;
+    --border: #1e2435;
+    --border-lt: #2a3148;
+    --accent: #4f7cff;
+    --accent2: #7c9fff;
     --accent-dim: rgba(79,124,255,.08);
-    --accent-glow:rgba(79,124,255,.20);
-    --muted:      #4a5568;
-    --text:       #e8ecf4;
-    --text-dim:   #8892a4;
-    --green:      #2dd4a0;
-    --amber:      #f5a623;
-    --radius:     14px;
-    --radius-sm:  9px;
-    --shadow:     0 2px 12px rgba(0,0,0,.4);
+    --accent-glow: rgba(79,124,255,.20);
+    --muted: #4a5568;
+    --text: #e8ecf4;
+    --text-dim: #8892a4;
+    --green: #2dd4a0;
+    --amber: #f5a623;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --shadow: 0 2px 12px rgba(0,0,0,.4);
 }
 
-/* Light mode overrides */
+/* Light Mode */
 @media (prefers-color-scheme: light) {
     :root {
-        --bg:         #f4f6fb;
-        --surface:    #ffffff;
-        --surface2:   #f0f2f8;
-        --surface3:   #e8ecf5;
-        --border:     #dde1ee;
-        --border-lt:  #c8cfe0;
-        --accent:     #3a6aef;
-        --accent2:    #2a56d6;
+        --bg: #f4f6fb;
+        --surface: #ffffff;
+        --surface2: #f0f2f8;
+        --surface3: #e8ecf5;
+        --border: #dde1ee;
+        --border-lt: #c8cfe0;
+        --accent: #3a6aef;
+        --accent2: #2a56d6;
         --accent-dim: rgba(58,106,239,.07);
-        --accent-glow:rgba(58,106,239,.18);
-        --muted:      #8a94a8;
-        --text:       #111827;
-        --text-dim:   #4b5563;
-        --green:      #0e9e6e;
-        --amber:      #c47d0a;
-        --shadow:     0 2px 12px rgba(0,0,0,.08);
+        --accent-glow: rgba(58,106,239,.18);
+        --muted: #8a94a8;
+        --text: #111827;
+        --text-dim: #4b5563;
+        --green: #0e9e6e;
+        --amber: #c47d0a;
+        --shadow: 0 2px 12px rgba(0,0,0,.08);
     }
 }
 
-*, *::before, *::after { box-sizing: border-box; }
+* {
+    box-sizing: border-box;
+}
 
 html, body, [class*="css"] {
     font-family: 'Geist', sans-serif !important;
@@ -68,82 +70,138 @@ html, body, [class*="css"] {
     color: var(--text) !important;
 }
 
-#MainMenu, footer, header { visibility: hidden; }
+/* Hide Streamlit UI */
+#MainMenu, footer, header {
+    visibility: hidden;
+}
+
 .block-container {
     padding: 2.5rem 3rem 6rem !important;
     max-width: 820px !important;
     margin: 0 auto !important;
 }
-[data-testid="stSidebar"] { display: none !important; }
 
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-lt); border-radius: 99px; }
+[data-testid="stSidebar"] {
+    display: none !important;
+}
 
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 4px;
+}
+::-webkit-scrollbar-thumb {
+    background: var(--border-lt);
+    border-radius: 99px;
+}
+
+/* Top Bar */
 .top-bar {
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: center;
     padding-bottom: 2rem;
     margin-bottom: 2rem;
     border-bottom: 1px solid var(--border);
 }
-.brand { display: flex; align-items: center; gap: 13px; }
+
+.brand {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
 .brand-icon {
-    width: 44px; height: 44px;
-    background: linear-gradient(135deg, var(--accent), #7c9fff);
+    width: 44px;
+    height: 44px;
     border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 21px;
-    box-shadow: 0 0 24px var(--accent-glow);
-}
-.brand-name {
-    font-family: 'Instrument Serif', serif !important;
-    font-size: 1.55rem;
-    color: var(--text);
-    letter-spacing: -0.01em;
-    line-height: 1;
-}
-.brand-sub {
-    font-size: 0.67rem;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    font-weight: 500;
-    margin-top: 3px;
-}
-.status-pill {
+    background: linear-gradient(135deg, var(--accent), #7c9fff);
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 0.76rem;
-    color: var(--text-dim);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 7px 15px;
-    border-radius: 99px;
-}
-.status-dot {
-    width: 7px; height: 7px;
-    background: var(--green);
-    border-radius: 50%;
-    box-shadow: 0 0 6px var(--green);
-    animation: pulse 2s infinite;
-}
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: .4; }
+    justify-content: center;
+    box-shadow: 0 0 24px var(--accent-glow);
 }
 
-.divider { border: none; border-top: 1px solid var(--border); margin: 1.4rem 0; }
+/* Chat bubbles fix (IMPORTANT PART) */
+[data-testid="stChatMessage"] {
+    background: transparent !important;
+}
 
-.section-label {
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 10px;
+.stChatMessage > div:last-child {
+    background: var(--surface) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius) !important;
+    padding: 14px 16px !important;
+    max-width: 78% !important;
+    color: var(--text) !important;
+    box-shadow: var(--shadow) !important;
+}
+
+/* FORCE TEXT COLOR FIX (THIS SOLVES YOUR ISSUE) */
+.stChatMessage p,
+.stChatMessage span,
+.stChatMessage div {
+    color: var(--text) !important;
+}
+
+[data-testid="stChatMessageContent"] * {
+    color: var(--text) !important;
+}
+
+/* User vs Assistant */
+div[data-testid="stChatMessage"]:has(svg[data-testid="chatAvatarIcon-user"])
+.stChatMessage > div:last-child {
+    background: var(--surface3) !important;
+    border-color: var(--border-lt) !important;
+}
+
+/* Input */
+[data-testid="stChatInput"] textarea {
+    background: var(--surface2) !important;
+    border: 1px solid var(--border-lt) !important;
+    color: var(--text) !important;
+    border-radius: var(--radius) !important;
+}
+
+[data-testid="stChatInput"] textarea:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
+}
+
+/* Buttons */
+.stButton > button {
+    background: var(--surface2) !important;
+    border: 1px solid var(--border-lt) !important;
+    color: var(--text-dim) !important;
+    border-radius: var(--radius-sm) !important;
+    transition: 0.2s ease !important;
+}
+
+.stButton > button:hover {
+    background: var(--accent) !important;
+    color: white !important;
+    transform: translateY(-1px);
+}
+
+/* Audio */
+audio {
+    width: 100% !important;
+    border-radius: var(--radius-sm) !important;
+}
+
+/* Voice banner */
+.voice-banner {
+    background: var(--accent-dim);
+    border: 1px solid rgba(79,124,255,.2);
+    padding: 12px 16px;
+    border-radius: var(--radius);
+    color: var(--accent2);
+}
+
+/* Divider */
+.divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 1.5rem 0;
 }
 
 .badge {
