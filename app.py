@@ -13,12 +13,6 @@ API_URL = "https://yousefemam-voiceai.hf.space"
 MAX_HISTORY = 20
 REQUEST_TIMEOUT = 120
 SUPPORTED_LANGS = {"ar": "Arabic", "en": "English", "fr": "French"}
-CONVERSATION_STARTERS = [
-    "Tell me a joke",
-    "What's the weather today?",
-    "Help me with a question",
-    "Let's have a conversation"
-]
 
 
 class InputMode(Enum):
@@ -451,30 +445,6 @@ audio::-webkit-media-controls-panel {
     line-height: 1.5;
 }
 
-.starter-suggestions {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-
-.starter-btn {
-    padding: 8px 16px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-secondary);
-    border-radius: 8px;
-    font-size: 0.85rem;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.starter-btn:hover {
-    border-color: var(--accent);
-    background: var(--accent-dim);
-    color: var(--accent-light);
-}
-
 .stExpander {
     border: 1px solid var(--border) !important;
     border-radius: 12px !important;
@@ -639,22 +609,17 @@ class UI:
 
     @staticmethod
     def render_empty_state():
-        st.html("""
-        <div class="empty-state">
-            <div class="empty-icon">💬</div>
-            <div class="empty-title">Start a conversation</div>
-            <div class="empty-sub">Type a message or switch to Voice Mode to speak naturally with the assistant.</div>
-            <div class="starter-suggestions" id="starters"></div>
+        st.markdown("""
+        <div style="text-align: center; padding: 4rem 2rem; animation: fadeIn 0.5s ease-out;">
+            <div style="font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; animation: float 3s ease-in-out infinite;">💬</div>
+            <div style="font-size: 1.25rem; font-weight: 600; color: var(--text); margin-bottom: 0.5rem;">Start a conversation</div>
+            <div style="font-size: 0.9rem; color: var(--text-secondary); max-width: 300px; margin: 0 auto; line-height: 1.5;">Type a message or switch to Voice Mode to speak naturally with the assistant.</div>
         </div>
-        """)
+        """, unsafe_allow_html=True)
 
     @staticmethod
     def render_voice_banner():
-        st.html("""
-        <div class="voice-banner">
-            🎤 Voice Mode Active - Record your message and press Send
-        </div>
-        """)
+        st.info("🎤 Voice Mode Active - Record your message and press Send")
 
     @staticmethod
     def render_mode_badge(mode: InputMode):
@@ -845,7 +810,7 @@ def render_controls(client: VoiceAIClient):
 def render_voice_cloning_section():
     vc_title = "🎯 Voice Cloning - Active" if st.session_state.profile else "🎯 Voice Cloning - No Profile"
     with st.expander(vc_title, expanded=not st.session_state.profile):
-        st.html("<h4>User Profile</h4>")
+        st.subheader("User Profile")
         uid_col, lang_col = st.columns([2, 1])
 
         with uid_col:
@@ -870,8 +835,8 @@ def render_voice_cloning_section():
             if new_lang != st.session_state.lang:
                 st.session_state.lang = new_lang
 
-        st.html('<hr class="divider">')
-        st.html("<h4>Voice Sample</h4>")
+        st.divider()
+        st.subheader("Voice Sample")
 
         audio_sample = st.audio_input(
             "Record a voice sample (5-30 seconds recommended)",
@@ -960,12 +925,14 @@ def main():
     UI.render_mode_badge(st.session_state.input_mode)
     st.html('<hr class="divider">')
 
-    if not st.session_state.chat_history:
-        UI.render_empty_state()
-    else:
+    # Display chat messages
+    if st.session_state.chat_history:
         for msg in st.session_state.chat_history:
             UI.render_chat_message(msg)
+    else:
+        UI.render_empty_state()
 
+    # Input handling - MUST BE LAST
     if st.session_state.input_mode == InputMode.TEXT:
         handle_text_input(client)
     else:
