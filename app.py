@@ -259,7 +259,7 @@ def screen_chat(client: VoiceAIClient):
         st.rerun()
 
 
-# ── Main ───────────────────────────────────────────────────────────────────
+# ── Main ───────────────────────────────────────
 st.set_page_config(page_title="VoiceAI", page_icon="🎤", layout="wide")
 init_state()
 client = VoiceAIClient(API_URL)
