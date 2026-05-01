@@ -293,31 +293,27 @@ if st.session_state.input_mode == "text":
     if prompt:
         st.session_state.chat.append({"role": "user", "content": prompt})
 
-        with st.chat_message("assistant"):
-            with st.spinner("Generating response..."):
-                try:
-                    res = requests.post(
-                        f"{API_URL}/text",
-                        json={
-                            "history": [
-                                {"role": m["role"], "content": m.get("content", "")}
-                                for m in st.session_state.chat[-10:]
-                            ],
-                            "lang": "ar",
-                            "user_id": st.session_state.user_id,
-                        },
-                        timeout=600
-                    )
-                    res.raise_for_status()
-                    data = res.json()
-                    audio_hex   = data.get("audio")
-                    audio_bytes = bytes.fromhex(audio_hex) if audio_hex else None
-                except Exception as e:
-                    st.error(f"API error: {e}")
-                    audio_bytes = None
-
-            if audio_bytes:
-                st.audio(audio_bytes, format="audio/wav")
+        with st.spinner("Generating response..."):
+            try:
+                res = requests.post(
+                    f"{API_URL}/text",
+                    json={
+                        "history": [
+                            {"role": m["role"], "content": m.get("content", "")}
+                            for m in st.session_state.chat[-10:]
+                        ],
+                        "lang": "ar",
+                        "user_id": st.session_state.user_id,
+                    },
+                    timeout=600
+                )
+                res.raise_for_status()
+                data = res.json()
+                audio_hex   = data.get("audio")
+                audio_bytes = bytes.fromhex(audio_hex) if audio_hex else None
+            except Exception as e:
+                st.error(f"API error: {e}")
+                audio_bytes = None
 
         st.session_state.chat.append({"role": "assistant", "audio": audio_bytes})
         st.rerun()
