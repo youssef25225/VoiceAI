@@ -166,14 +166,12 @@ def screen_landing():
         if st.button("Login with Voice", use_container_width=True, type="primary", key="btn_login"):
             st.session_state.app_state = AppState.LOGGING_IN
             st.session_state.audio_key += 1
-            st.rerun()
     with col2:
         st.subheader("New User")
         st.write("First time? Register your voice print now.")
         if st.button("Enroll My Voice", use_container_width=True, key="btn_enroll"):
             st.session_state.app_state = AppState.ENROLLING
             st.session_state.enroll_key += 1
-            st.rerun()
 
 
 def screen_enroll(client: VoiceAIClient):
