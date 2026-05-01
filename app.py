@@ -4,7 +4,7 @@ import soundfile as sf
 import requests
 from src.core.enroll import save_voice_profile, load_voice_profile
 
-API_URL = "http://localhost:8000"
+API_URL = "https://yousefemam-voiceai.hf.space"
 
 st.set_page_config(
     page_title="VoiceAI",
