@@ -1,3 +1,4 @@
+```python
 import io
 import streamlit as st
 import soundfile as sf
@@ -59,9 +60,7 @@ st.markdown("""
     }
 }
 
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 html, body, [class*="css"] {
     font-family: 'Geist', sans-serif !important;
@@ -69,9 +68,7 @@ html, body, [class*="css"] {
     color: var(--text) !important;
 }
 
-#MainMenu, footer, header {
-    visibility: hidden;
-}
+#MainMenu, footer, header { visibility: hidden; }
 
 .block-container {
     padding: 2.5rem 3rem 6rem !important;
@@ -79,18 +76,10 @@ html, body, [class*="css"] {
     margin: 0 auto !important;
 }
 
-[data-testid="stSidebar"] {
-    display: none !important;
-}
+[data-testid="stSidebar"] { display: none !important; }
 
-::-webkit-scrollbar {
-    width: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--border-lt);
-    border-radius: 99px;
-}
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border-lt); border-radius: 99px; }
 
 .top-bar {
     display: flex;
@@ -101,11 +90,7 @@ html, body, [class*="css"] {
     border-bottom: 1px solid var(--border);
 }
 
-.brand {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
+.brand { display: flex; gap: 12px; align-items: center; }
 
 .brand-icon {
     width: 44px;
@@ -134,16 +119,9 @@ html, body, [class*="css"] {
     border-radius: 99px;
 }
 
-.status-dot {
-    width: 7px;
-    height: 7px;
-    background: var(--green);
-    border-radius: 50%;
-}
+.status-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; }
 
-[data-testid="stChatMessage"] {
-    background: transparent !important;
-}
+[data-testid="stChatMessage"] { background: transparent !important; }
 
 .stChatMessage > div:last-child {
     background: var(--surface) !important;
@@ -155,15 +133,9 @@ html, body, [class*="css"] {
     box-shadow: var(--shadow) !important;
 }
 
-.stChatMessage p,
-.stChatMessage span,
-.stChatMessage div {
-    color: var(--text) !important;
-}
+.stChatMessage p, .stChatMessage span, .stChatMessage div { color: var(--text) !important; }
 
-[data-testid="stChatMessageContent"] * {
-    color: var(--text) !important;
-}
+[data-testid="stChatMessageContent"] * { color: var(--text) !important; }
 
 div[data-testid="stChatMessage"]:has(svg[data-testid="chatAvatarIcon-user"]) .stChatMessage > div:last-child {
     background: var(--surface3) !important;
@@ -195,10 +167,7 @@ div[data-testid="stChatMessage"]:has(svg[data-testid="chatAvatarIcon-user"]) .st
     transform: translateY(-1px);
 }
 
-audio {
-    width: 100% !important;
-    border-radius: var(--radius-sm) !important;
-}
+audio { width: 100% !important; border-radius: var(--radius-sm) !important; }
 
 .voice-banner {
     background: var(--accent-dim);
@@ -208,15 +177,10 @@ audio {
     color: var(--accent2);
 }
 
-.divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 1.5rem 0;
-}
+.divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Session State ──────────────────────────────────────────────────────────────
 if "chat"        not in st.session_state: st.session_state.chat = []
 if "user_id"     not in st.session_state: st.session_state.user_id = "default_user"
 if "profile"     not in st.session_state: st.session_state.profile = load_voice_profile(st.session_state.user_id)
@@ -225,7 +189,6 @@ if "audio_key"   not in st.session_state: st.session_state.audio_key = 0
 if "enroll_key"  not in st.session_state: st.session_state.enroll_key = 0
 if "last_sample" not in st.session_state: st.session_state.last_sample = None
 
-# ── Top Bar ────────────────────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="top-bar">
     <div class="brand">
@@ -246,7 +209,6 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ── Voice Enrollment ───────────────────────────────────────────────────────────
 vc_title = "Voice Cloning — Active" if st.session_state.profile else "Voice Cloning — No profile"
 with st.expander(vc_title, expanded=not st.session_state.profile):
     st.markdown('<div class="section-label">User Profile</div>', unsafe_allow_html=True)
@@ -290,7 +252,6 @@ with st.expander(vc_title, expanded=not st.session_state.profile):
 
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
-# ── Mode Controls ──────────────────────────────────────────────────────────────
 c1, c2, c3, _ = st.columns([1, 1, 1, 2])
 with c1:
     if st.button("Text Mode", use_container_width=True, key="btn_text"):
@@ -315,7 +276,6 @@ st.markdown(f"""
 
 st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
-# ── Chat History ───────────────────────────────────────────────────────────────
 if not st.session_state.chat:
     st.markdown("""
     <div class="empty-state">
@@ -325,19 +285,14 @@ if not st.session_state.chat:
     </div>""", unsafe_allow_html=True)
 else:
     for m in st.session_state.chat:
-        with st.chat_message(m["role"]):
-            # صوت بس — مفيش text
-            if m.get("audio"):
+        if m.get("audio"):
+            with st.chat_message(m["role"]):
                 st.audio(m["audio"], format="audio/wav")
 
-# ── Text Mode ──────────────────────────────────────────────────────────────────
 if st.session_state.input_mode == "text":
     prompt = st.chat_input("Message VoiceAI...")
     if prompt:
         st.session_state.chat.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            if st.session_state.chat[-1].get("audio"):
-                st.audio(st.session_state.chat[-1]["audio"], format="audio/wav")
 
         with st.chat_message("assistant"):
             with st.spinner("Generating response..."):
@@ -346,7 +301,7 @@ if st.session_state.input_mode == "text":
                         f"{API_URL}/text",
                         json={
                             "history": [
-                                {"role": m["role"], "content": m["content"]}
+                                {"role": m["role"], "content": m.get("content", "")}
                                 for m in st.session_state.chat[-10:]
                             ],
                             "lang": "ar",
@@ -368,7 +323,6 @@ if st.session_state.input_mode == "text":
         st.session_state.chat.append({"role": "assistant", "audio": audio_bytes})
         st.rerun()
 
-# ── Voice Mode ─────────────────────────────────────────────────────────────────
 else:
     st.markdown('<div class="voice-banner">Voice Mode — Record your message then press Send</div>', unsafe_allow_html=True)
     audio_msg = st.audio_input("Record", key=f"voice_{st.session_state.audio_key}", label_visibility="collapsed")
@@ -404,3 +358,4 @@ else:
                 st.rerun()
             else:
                 st.warning("No audio received. Please try again.")
+```
