@@ -5,6 +5,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Tuple
 from html import escape
+
 import streamlit as st
 import requests
 
@@ -176,8 +177,16 @@ html, body, [data-testid="stApp"] {
 .page-title span { color: var(--accent); font-weight: 600; }
 .page-subtitle { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.3rem; font-family: 'DM Mono', monospace; }
 
-.msg-row { display: flex; padding: 1.2rem 0; border-bottom: 1px solid var(--border-subtle); animation: fadeIn 0.2s ease; }
+.msg-row {
+    display: flex;
+    padding: 1.2rem 0;
+    border-bottom: 1px solid var(--border-subtle);
+    animation: fadeIn 0.2s ease;
+    gap: 0;
+}
+
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
 .msg-row.user { flex-direction: row-reverse; }
 
 .msg-avatar {
@@ -186,6 +195,8 @@ html, body, [data-testid="stApp"] {
     font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em;
     text-transform: uppercase; flex-shrink: 0;
     font-family: 'DM Mono', monospace;
+    align-self: flex-start;
+    margin-top: 4px;
 }
 
 .msg-avatar.user-av { background: rgba(201,169,110,0.15); color: var(--accent); border: 1px solid rgba(201,169,110,0.3); margin-left: 1rem; }
@@ -195,16 +206,30 @@ html, body, [data-testid="stApp"] {
 .msg-row.user .msg-content { text-align: right; }
 
 .msg-text {
-    font-size: 0.9rem; line-height: 1.7;
+    font-size: 0.9rem;
+    line-height: 1.7;
     color: var(--text-primary);
-    padding: 0.8rem 1rem; border-radius: 8px;
-    display: inline-block; max-width: 100%; text-align: left;
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    display: inline-block;
+    max-width: 100%;
+    text-align: left;
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .msg-row.user .msg-text { background: var(--user-bubble); border: 1px solid var(--border); }
 .msg-row.bot .msg-text { background: transparent; border: none; padding-left: 0; }
 
-audio { margin-top: 0.5rem; height: 32px; border-radius: 6px; width: 100%; max-width: 300px; filter: invert(0.85) hue-rotate(180deg) saturate(0.3); }
+audio {
+    margin-top: 0.5rem;
+    height: 32px;
+    border-radius: 6px;
+    width: 100%;
+    max-width: 300px;
+    filter: invert(0.85) hue-rotate(180deg) saturate(0.3);
+    display: block;
+}
 
 [data-testid="stChatInput"] { background: var(--bg-secondary) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; }
 [data-testid="stChatInput"] textarea { background: transparent !important; color: var(--text-primary) !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.875rem !important; }
@@ -222,6 +247,9 @@ label, [data-testid="stWidgetLabel"] { color: var(--text-secondary) !important; 
 .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
 .empty-state-title { font-size: 1rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem; }
 .empty-state-sub { font-size: 0.8rem; letter-spacing: 0.06em; }
+
+/* Remove Streamlit's default element margins inside chat rows */
+.msg-content .stMarkdown { margin: 0 !important; }
 </style>
 """
 
@@ -285,18 +313,18 @@ html, body, [data-testid="stApp"] { background: var(--bg-primary) !important; co
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 .msg-row.user { flex-direction: row-reverse; }
 
-.msg-avatar { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; flex-shrink: 0; font-family: 'DM Mono', monospace; }
+.msg-avatar { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; flex-shrink: 0; font-family: 'DM Mono', monospace; align-self: flex-start; margin-top: 4px; }
 .msg-avatar.user-av { background: rgba(26,86,219,0.1); color: var(--accent); border: 1px solid rgba(26,86,219,0.2); margin-left: 1rem; }
 .msg-avatar.bot-av { background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); margin-right: 1rem; }
 
 .msg-content { flex: 1; max-width: 75%; }
 .msg-row.user .msg-content { text-align: right; }
 
-.msg-text { font-size: 0.9rem; line-height: 1.7; color: var(--text-primary); padding: 0.8rem 1rem; border-radius: 8px; display: inline-block; max-width: 100%; text-align: left; }
+.msg-text { font-size: 0.9rem; line-height: 1.7; color: var(--text-primary); padding: 0.8rem 1rem; border-radius: 8px; display: inline-block; max-width: 100%; text-align: left; white-space: pre-wrap; word-break: break-word; }
 .msg-row.user .msg-text { background: var(--user-bubble); border: 1px solid rgba(26,86,219,0.15); color: var(--accent-dim); }
 .msg-row.bot .msg-text { background: transparent; border: none; padding-left: 0; }
 
-audio { margin-top: 0.5rem; height: 32px; border-radius: 6px; width: 100%; max-width: 300px; }
+audio { margin-top: 0.5rem; height: 32px; border-radius: 6px; width: 100%; max-width: 300px; display: block; }
 
 [data-testid="stChatInput"] { background: var(--bg-secondary) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; box-shadow: var(--shadow) !important; }
 [data-testid="stChatInput"] textarea { background: transparent !important; color: var(--text-primary) !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.875rem !important; }
@@ -416,6 +444,40 @@ def add_msg(msg: ChatMessage):
         st.session_state.chat_history = st.session_state.chat_history[-MAX_HISTORY * 2:]
 
 
+def render_message(msg: ChatMessage, is_last: bool, user_name: str):
+    """Render a single chat message using columns to avoid HTML injection issues."""
+    is_user = msg.role == "user"
+    initials = user_name[:2].upper() if is_user else "AI"
+    av_cls   = "user-av" if is_user else "bot-av"
+    row_cls  = "user" if is_user else "bot"
+
+    # Safe-escape the text content
+    safe_content = escape(msg.content)
+
+    # Build audio HTML separately (this is trusted HTML, not user content)
+    audio_html = ""
+    if msg.audio and not is_user:
+        audio_b64 = base64.b64encode(msg.audio).decode()
+        autoplay  = "autoplay" if is_last else ""
+        audio_html = (
+            f'<audio {autoplay} controls>'
+            f'<source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">'
+            f'</audio>'
+        )
+
+    # Render row wrapper open + avatar
+    st.markdown(
+        f'<div class="msg-row {row_cls}">'
+        f'<div class="msg-avatar {av_cls}">{initials}</div>'
+        f'<div class="msg-content">'
+        f'<div class="msg-text">{safe_content}</div>'
+        f'{audio_html}'
+        f'</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
 # ── Main ───────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="VoiceAI", layout="wide", initial_sidebar_state="expanded")
 init_state()
@@ -451,23 +513,31 @@ with st.sidebar:
     if st.session_state.user_name:
         st.markdown(f"""
         <div class="user-info-card">
-            <div class="user-name">{st.session_state.user_name}</div>
+            <div class="user-name">{escape(st.session_state.user_name)}</div>
             <div class="user-meta">{len(st.session_state.chat_history)} messages</div>
         </div>
         """, unsafe_allow_html=True)
-        st.markdown('<div class="status-badge"><span class="status-dot"></span>Session Active</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="status-badge"><span class="status-dot"></span>Session Active</div>',
+            unsafe_allow_html=True,
+        )
         st.markdown("<br>", unsafe_allow_html=True)
+
         if st.button("Sign Out", use_container_width=True):
             st.session_state.user_id = None
             st.session_state.user_name = None
             st.session_state.chat_history = []
             st.session_state.audio_key += 1
             st.rerun()
+
         if st.button("Clear History", use_container_width=True):
             st.session_state.chat_history = []
             st.rerun()
     else:
-        st.markdown('<div class="user-meta" style="padding:0.5rem 0">No active session</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="user-meta" style="padding:0.5rem 0">No active session</div>',
+            unsafe_allow_html=True,
+        )
 
 # ── Auth ───────────────────────────────────────────────────────────────────
 if not st.session_state.user_name:
@@ -502,7 +572,7 @@ if not st.session_state.user_name:
     with tab_enroll:
         st.markdown('<div class="section-label">Your Name</div>', unsafe_allow_html=True)
         name = st.text_input("", placeholder="e.g. Ahmed", label_visibility="collapsed", key="disp_name")
-        st.markdown('<div class="section-label">Voice Sample (5-30 seconds)</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-label">Voice Sample (5–30 seconds)</div>', unsafe_allow_html=True)
         sample = st.audio_input("", key=f"enroll_{st.session_state.enroll_key}", label_visibility="collapsed")
         st.markdown("<br>", unsafe_allow_html=True)
 
@@ -526,7 +596,7 @@ if not st.session_state.user_name:
 else:
     st.markdown(f"""
     <div class="page-header">
-        <div class="page-title">Hello, <span>{st.session_state.user_name}</span></div>
+        <div class="page-title">Hello, <span>{escape(st.session_state.user_name)}</span></div>
         <div class="page-subtitle">Voice AI Session</div>
     </div>
     """, unsafe_allow_html=True)
@@ -539,27 +609,9 @@ else:
         </div>
         """, unsafe_allow_html=True)
     else:
+        history_len = len(st.session_state.chat_history)
         for i, msg in enumerate(st.session_state.chat_history):
-            is_user  = msg.role == "user"
-            row_cls  = "user" if is_user else "bot"
-            av_cls   = "user-av" if is_user else "bot-av"
-            initials = st.session_state.user_name[:2].upper() if is_user else "AI"
-
-            audio_html = ""
-            if msg.audio and not is_user:
-                audio_b64 = base64.b64encode(msg.audio).decode()
-                autoplay  = "autoplay" if i == len(st.session_state.chat_history) - 1 else ""
-                audio_html = f'<audio {autoplay} controls><source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3"></audio>'
-
-            st.markdown(f"""
-            <div class="msg-row {row_cls}">
-                <div class="msg-avatar {av_cls}">{initials}</div>
-                <div class="msg-content">
-                    <div class="msg-text" style="white-space: pre-wrap">{msg.content.replace('<', '&lt;').replace('>', '&gt;')}</div>
-                    {audio_html}
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            render_message(msg, is_last=(i == history_len - 1), user_name=st.session_state.user_name)
 
     prompt = st.chat_input("Write a message...")
     if prompt and prompt.strip():
@@ -572,7 +624,11 @@ else:
         if error:
             add_msg(ChatMessage(role="assistant", content=error, error=True))
         elif audio_bytes or text_reply:
-            add_msg(ChatMessage(role="assistant", content=text_reply or "*(voice response)*", audio=audio_bytes))
+            add_msg(ChatMessage(
+                role="assistant",
+                content=text_reply or "*(voice response)*",
+                audio=audio_bytes,
+            ))
         else:
             add_msg(ChatMessage(role="assistant", content="No response received.", error=True))
         st.rerun()
