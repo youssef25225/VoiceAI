@@ -366,10 +366,11 @@ def render_message(msg: ChatMessage, is_last: bool, user_name: str):
         audio_b64 = base64.b64encode(msg.audio).decode()
         autoplay  = "autoplay" if is_last else ""
         audio_html = (
-            f'<audio {autoplay} controls>'
-            f'<source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">'
-            f'</audio>'
-        )
+    f'<audio {autoplay} controls>'
+    f'<source src="data:audio/wav;base64,{audio_b64}" type="audio/wav">'
+    f'<source src="data:audio/mpeg;base64,{audio_b64}" type="audio/mpeg">'
+    f'</audio>'
+)
 
     st.markdown(
         f'<div class="msg-row {row_cls}">'
