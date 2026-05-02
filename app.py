@@ -455,7 +455,7 @@ if not st.session_state.user_name:
 
     with tab_enroll:
         st.markdown('<div class="section-label">Your Name</div>', unsafe_allow_html=True)
-        name = st.text_input("", placeholder="e.g. Ahmed", label_visibility="collapsed", key="disp_name")
+        name = st.text_input("", placeholder="e.g. Adham", label_visibility="collapsed", key="disp_name")
         st.markdown('<div class="section-label">Voice Sample (5–30 seconds)</div>', unsafe_allow_html=True)
         sample = st.audio_input("", key=f"enroll_{st.session_state.enroll_key}", label_visibility="collapsed")
         st.markdown("<br>", unsafe_allow_html=True)
