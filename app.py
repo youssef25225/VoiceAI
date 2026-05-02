@@ -12,7 +12,7 @@ import requests
 API_URL = "https://yousefemam-voiceai.hf.space"
 MAX_HISTORY = 20
 REQUEST_TIMEOUT = 120
-SUPPORTED_LANGS = {"ar": "Arabic", "en": "English", "fr": "French"}
+LANG = "ar"
 
 DARK_CSS = """
 <style>
@@ -428,7 +428,6 @@ def init_state():
         "user_id":      None,
         "user_name":    None,
         "chat_history": [],
-        "lang":         "ar",
         "audio_key":    0,
         "enroll_key":   0,
         "dark_mode":    True,
@@ -494,18 +493,6 @@ with st.sidebar:
     theme_label = "Light Mode" if st.session_state.dark_mode else "Dark Mode"
     if st.button(theme_label, use_container_width=True):
         st.session_state.dark_mode = not st.session_state.dark_mode
-        st.rerun()
-
-    st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="section-label">Language</div>', unsafe_allow_html=True)
-    lang_keys = list(SUPPORTED_LANGS.keys())
-    lang_vals  = list(SUPPORTED_LANGS.values())
-    idx = lang_keys.index(st.session_state.lang)
-    sel = st.selectbox("", lang_vals, index=idx, label_visibility="collapsed")
-    new_lang = lang_keys[lang_vals.index(sel)]
-    if new_lang != st.session_state.lang:
-        st.session_state.lang = new_lang
         st.rerun()
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
@@ -619,7 +606,7 @@ else:
         history = [m.to_api_dict() for m in st.session_state.chat_history[-MAX_HISTORY:]]
         with st.spinner(""):
             audio_bytes, text_reply, error = client.chat(
-                history, st.session_state.lang, st.session_state.user_id
+                history, LANG, st.session_state.user_id
             )
         if error:
             add_msg(ChatMessage(role="assistant", content=error, error=True))
