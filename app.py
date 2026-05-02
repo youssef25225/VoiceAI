@@ -433,7 +433,7 @@ if not st.session_state.user_name:
     </div>
     """, unsafe_allow_html=True)
 
-    tab_login, tab_enroll = st.tabs(["Sign In", "Register"])
+    tab_login, tab_enroll = st.tabs(["Change sound", "New user"])
 
     with tab_login:
         st.markdown('<div class="section-label">Voice Sample</div>', unsafe_allow_html=True)
