@@ -931,7 +931,7 @@ with st.sidebar:
 if not st.session_state.user_name:
     st.markdown("""
     <div class="page-header">
-        <div class="page-title">Voice <span>Authentication</span></div>
+        <div class="page-title">Voice <span>VoiceAI</span></div>
         <div class="page-subtitle">Identify yourself to begin your session</div>
     </div>
     """, unsafe_allow_html=True)
