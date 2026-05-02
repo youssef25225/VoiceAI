@@ -438,7 +438,7 @@ if not st.session_state.user_name:
         st.markdown('<div class="section-label">Voice Sample</div>', unsafe_allow_html=True)
         audio = st.audio_input("", key=f"voice_{st.session_state.audio_key}", label_visibility="collapsed")
         st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("Authenticate", type="primary", use_container_width=True, key="login_submit"):
+        if st.button("Recording", type="primary", use_container_width=True, key="login_submit"):
             if not audio:
                 st.warning("Please record a voice sample to continue.")
             else:
