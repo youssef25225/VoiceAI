@@ -555,7 +555,7 @@ else:
             <div class="msg-row {row_cls}">
                 <div class="msg-avatar {av_cls}">{initials}</div>
                 <div class="msg-content">
-                    <div class="msg-text">{escape(msg.content)}</div>
+                    <div class="msg-text" style="white-space: pre-wrap">{msg.content.replace('<', '&lt;').replace('>', '&gt;')}</div>
                     {audio_html}
                 </div>
             </div>
