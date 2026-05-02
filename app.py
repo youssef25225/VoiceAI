@@ -1,6 +1,7 @@
 import io
 import time
 import base64
+import re
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Tuple
 
@@ -20,7 +21,6 @@ DARK_CSS = """
     --bg-primary:     #0e0e10;
     --bg-secondary:   #16161a;
     --bg-tertiary:    #1e1e24;
-    --bg-card:        #1a1a20;
     --border:         #2a2a35;
     --border-subtle:  #222228;
     --accent:         #c9a96e;
@@ -31,7 +31,6 @@ DARK_CSS = """
     --success:        #4caf7d;
     --error:          #e05c5c;
     --user-bubble:    #1e1e28;
-    --bot-bubble:     #16161e;
     --shadow:         0 4px 24px rgba(0,0,0,0.4);
 }
 
@@ -62,11 +61,7 @@ html, body, [data-testid="stApp"] {
     padding: 1.5rem 0 0.5rem;
 }
 
-.sidebar-divider {
-    height: 1px;
-    background: var(--border);
-    margin: 1rem 0;
-}
+.sidebar-divider { height: 1px; background: var(--border); margin: 1rem 0; }
 
 .status-badge {
     display: inline-flex;
@@ -84,17 +79,12 @@ html, body, [data-testid="stApp"] {
 }
 
 .status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
+    width: 6px; height: 6px; border-radius: 50%;
     background: var(--success);
     animation: pulse 2s infinite;
 }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-}
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
 .user-info-card {
     background: var(--bg-tertiary);
@@ -104,20 +94,9 @@ html, body, [data-testid="stApp"] {
     margin: 0.5rem 0;
 }
 
-.user-name {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-primary) !important;
-}
+.user-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary) !important; }
+.user-meta { font-size: 0.72rem; color: var(--text-muted) !important; font-family: 'DM Mono', monospace !important; margin-top: 0.25rem; }
 
-.user-meta {
-    font-size: 0.72rem;
-    color: var(--text-muted) !important;
-    font-family: 'DM Mono', monospace !important;
-    margin-top: 0.25rem;
-}
-
-/* Buttons */
 [data-testid="stButton"] button {
     background: transparent !important;
     border: 1px solid var(--border) !important;
@@ -132,10 +111,7 @@ html, body, [data-testid="stApp"] {
     width: 100% !important;
 }
 
-[data-testid="stButton"] button:hover {
-    border-color: var(--accent) !important;
-    color: var(--accent) !important;
-}
+[data-testid="stButton"] button:hover { border-color: var(--accent) !important; color: var(--accent) !important; }
 
 [data-testid="stButton"] button[kind="primary"] {
     background: var(--accent) !important;
@@ -150,13 +126,11 @@ html, body, [data-testid="stApp"] {
     color: #0e0e10 !important;
 }
 
-/* Tabs */
 [data-testid="stTabs"] [role="tablist"] {
     background: var(--bg-secondary) !important;
     border: 1px solid var(--border) !important;
     border-radius: 8px !important;
     padding: 4px !important;
-    gap: 4px !important;
 }
 
 [data-testid="stTabs"] [role="tab"] {
@@ -178,9 +152,7 @@ html, body, [data-testid="stApp"] {
     border: 1px solid var(--border) !important;
 }
 
-/* Inputs */
-[data-testid="stTextInput"] input,
-[data-testid="stSelectbox"] select {
+[data-testid="stTextInput"] input {
     background: var(--bg-tertiary) !important;
     border: 1px solid var(--border) !important;
     border-radius: 6px !important;
@@ -194,212 +166,62 @@ html, body, [data-testid="stApp"] {
     box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.15) !important;
 }
 
-/* Chat */
 .page-header {
     padding: 2.5rem 0 2rem;
     border-bottom: 1px solid var(--border);
     margin-bottom: 2rem;
 }
 
-.page-title {
-    font-size: 1.6rem;
-    font-weight: 300;
-    letter-spacing: 0.04em;
-    color: var(--text-primary);
-}
+.page-title { font-size: 1.6rem; font-weight: 300; letter-spacing: 0.04em; color: var(--text-primary); }
+.page-title span { color: var(--accent); font-weight: 600; }
+.page-subtitle { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.3rem; font-family: 'DM Mono', monospace; }
 
-.page-title span {
-    color: var(--accent);
-    font-weight: 600;
-}
-
-.page-subtitle {
-    font-size: 0.78rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-top: 0.3rem;
-    font-family: 'DM Mono', monospace;
-}
-
-.chat-container {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
-    margin-bottom: 1rem;
-}
-
-.msg-row {
-    display: flex;
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--border-subtle);
-    animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
+.msg-row { display: flex; padding: 1.2rem 0; border-bottom: 1px solid var(--border-subtle); animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 .msg-row.user { flex-direction: row-reverse; }
 
 .msg-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    flex-shrink: 0;
+    width: 32px; height: 32px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em;
+    text-transform: uppercase; flex-shrink: 0;
     font-family: 'DM Mono', monospace;
 }
 
-.msg-avatar.user-av {
-    background: rgba(201, 169, 110, 0.15);
-    color: var(--accent);
-    border: 1px solid rgba(201, 169, 110, 0.3);
-    margin-left: 1rem;
-}
+.msg-avatar.user-av { background: rgba(201,169,110,0.15); color: var(--accent); border: 1px solid rgba(201,169,110,0.3); margin-left: 1rem; }
+.msg-avatar.bot-av { background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); margin-right: 1rem; }
 
-.msg-avatar.bot-av {
-    background: var(--bg-tertiary);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    margin-right: 1rem;
-}
-
-.msg-content {
-    flex: 1;
-    max-width: 72%;
-}
-
-.msg-row.user .msg-content {
-    text-align: right;
-}
+.msg-content { flex: 1; max-width: 75%; }
+.msg-row.user .msg-content { text-align: right; }
 
 .msg-text {
-    font-size: 0.9rem;
-    line-height: 1.65;
+    font-size: 0.9rem; line-height: 1.7;
     color: var(--text-primary);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    display: inline-block;
-    max-width: 100%;
-    text-align: left;
+    padding: 0.8rem 1rem; border-radius: 8px;
+    display: inline-block; max-width: 100%; text-align: left;
 }
 
-.msg-row.user .msg-text {
-    background: var(--user-bubble);
-    border: 1px solid var(--border);
-}
+.msg-row.user .msg-text { background: var(--user-bubble); border: 1px solid var(--border); }
+.msg-row.bot .msg-text { background: transparent; border: none; padding-left: 0; }
 
-.msg-row.bot .msg-text {
-    background: transparent;
-    border: none;
-    padding-left: 0;
-}
+audio { margin-top: 0.5rem; height: 32px; border-radius: 6px; width: 100%; max-width: 300px; filter: invert(0.85) hue-rotate(180deg) saturate(0.3); }
 
-.msg-time {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    font-family: 'DM Mono', monospace;
-    margin-top: 0.3rem;
-    display: block;
-}
+[data-testid="stChatInput"] { background: var(--bg-secondary) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; }
+[data-testid="stChatInput"] textarea { background: transparent !important; color: var(--text-primary) !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.875rem !important; }
 
-audio {
-    margin-top: 0.5rem;
-    height: 32px;
-    border-radius: 6px;
-    width: 100%;
-    max-width: 320px;
-    filter: invert(0.85) hue-rotate(180deg) saturate(0.3);
-}
+[data-testid="stSelectbox"] > div > div { background: var(--bg-tertiary) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; color: var(--text-primary) !important; }
+[data-testid="stAudioInput"] { background: var(--bg-tertiary) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; }
 
-/* Chat input */
-[data-testid="stChatInput"] {
-    background: var(--bg-secondary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 8px !important;
-}
+label, [data-testid="stWidgetLabel"] { color: var(--text-secondary) !important; font-size: 0.75rem !important; font-weight: 500 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
 
-[data-testid="stChatInput"] textarea {
-    background: transparent !important;
-    color: var(--text-primary) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.875rem !important;
-}
-
-/* Selectbox */
-[data-testid="stSelectbox"] > div > div {
-    background: var(--bg-tertiary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 6px !important;
-    color: var(--text-primary) !important;
-}
-
-/* Audio input */
-[data-testid="stAudioInput"] {
-    background: var(--bg-tertiary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 8px !important;
-}
-
-/* Labels */
-label, [data-testid="stWidgetLabel"] {
-    color: var(--text-secondary) !important;
-    font-size: 0.75rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-}
-
-/* Spinner */
-[data-testid="stSpinner"] { color: var(--accent) !important; }
-
-/* Warnings / Errors */
-[data-testid="stAlert"] {
-    background: var(--bg-tertiary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 6px !important;
-    font-size: 0.82rem !important;
-}
-
-/* Hide streamlit branding */
 #MainMenu, footer, header { visibility: hidden; }
 [data-testid="stToolbar"] { display: none; }
 
-.section-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 0.75rem;
-    margin-top: 1.25rem;
-}
+.section-label { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-bottom: 0.75rem; margin-top: 1.25rem; }
 
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--text-muted);
-}
-
-.empty-state-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-}
-
-.empty-state-sub {
-    font-size: 0.8rem;
-    letter-spacing: 0.06em;
-}
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+.empty-state-title { font-size: 1rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.empty-state-sub { font-size: 0.8rem; letter-spacing: 0.06em; }
 </style>
 """
 
@@ -411,7 +233,6 @@ LIGHT_CSS = """
     --bg-primary:     #f8f9fc;
     --bg-secondary:   #ffffff;
     --bg-tertiary:    #f0f2f7;
-    --bg-card:        #ffffff;
     --border:         #dde1eb;
     --border-subtle:  #eef0f5;
     --accent:         #1a56db;
@@ -422,351 +243,78 @@ LIGHT_CSS = """
     --success:        #059669;
     --error:          #dc2626;
     --user-bubble:    #eff6ff;
-    --bot-bubble:     #ffffff;
     --shadow:         0 4px 24px rgba(0,0,0,0.06);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
-html, body, [data-testid="stApp"] {
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
-    font-family: 'DM Sans', sans-serif !important;
-}
+html, body, [data-testid="stApp"] { background: var(--bg-primary) !important; color: var(--text-primary) !important; font-family: 'DM Sans', sans-serif !important; }
 
-[data-testid="stSidebar"] {
-    background: var(--bg-secondary) !important;
-    border-right: 1px solid var(--border) !important;
-}
+[data-testid="stSidebar"] { background: var(--bg-secondary) !important; border-right: 1px solid var(--border) !important; }
+[data-testid="stSidebar"] * { color: var(--text-primary) !important; font-family: 'DM Sans', sans-serif !important; }
 
-[data-testid="stSidebar"] * {
-    color: var(--text-primary) !important;
-    font-family: 'DM Sans', sans-serif !important;
-}
+.sidebar-brand { font-size: 1.1rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent) !important; padding: 1.5rem 0 0.5rem; }
+.sidebar-divider { height: 1px; background: var(--border); margin: 1rem 0; }
 
-.sidebar-brand {
-    font-size: 1.1rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent) !important;
-    padding: 1.5rem 0 0.5rem;
-}
+.status-badge { display: inline-flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; padding: 0.4rem 0.8rem; border-radius: 4px; background: rgba(5,150,105,0.08); color: var(--success) !important; border: 1px solid rgba(5,150,105,0.2); }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); animation: pulse 2s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-.sidebar-divider {
-    height: 1px;
-    background: var(--border);
-    margin: 1rem 0;
-}
+.user-info-card { background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 0.5rem 0; }
+.user-name { font-size: 0.9rem; font-weight: 600; color: var(--text-primary) !important; }
+.user-meta { font-size: 0.72rem; color: var(--text-muted) !important; font-family: 'DM Mono', monospace !important; margin-top: 0.25rem; }
 
-.status-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    background: rgba(5, 150, 105, 0.08);
-    color: var(--success) !important;
-    border: 1px solid rgba(5, 150, 105, 0.2);
-}
+[data-testid="stButton"] button { background: transparent !important; border: 1px solid var(--border) !important; color: var(--text-secondary) !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.8rem !important; font-weight: 500 !important; letter-spacing: 0.06em !important; border-radius: 6px !important; padding: 0.5rem 1rem !important; transition: all 0.15s ease !important; width: 100% !important; }
+[data-testid="stButton"] button:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: rgba(26,86,219,0.04) !important; }
+[data-testid="stButton"] button[kind="primary"] { background: var(--accent) !important; border-color: var(--accent) !important; color: #ffffff !important; font-weight: 600 !important; }
+[data-testid="stButton"] button[kind="primary"]:hover { background: var(--accent-dim) !important; border-color: var(--accent-dim) !important; }
 
-.status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--success);
-    animation: pulse 2s infinite;
-}
+[data-testid="stTabs"] [role="tablist"] { background: var(--bg-tertiary) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; padding: 4px !important; }
+[data-testid="stTabs"] [role="tab"] { background: transparent !important; color: var(--text-secondary) !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.82rem !important; font-weight: 500 !important; border-radius: 6px !important; border: none !important; padding: 0.5rem 1.2rem !important; transition: all 0.15s !important; }
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] { background: var(--bg-secondary) !important; color: var(--accent) !important; border: 1px solid var(--border) !important; font-weight: 600 !important; }
 
-@keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.4; }
-}
+[data-testid="stTextInput"] input { background: var(--bg-secondary) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; color: var(--text-primary) !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.875rem !important; }
+[data-testid="stTextInput"] input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(26,86,219,0.1) !important; }
 
-.user-info-card {
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 0.5rem 0;
-}
+.page-header { padding: 2.5rem 0 2rem; border-bottom: 1px solid var(--border); margin-bottom: 2rem; }
+.page-title { font-size: 1.6rem; font-weight: 300; letter-spacing: 0.02em; color: var(--text-primary); }
+.page-title span { color: var(--accent); font-weight: 600; }
+.page-subtitle { font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin-top: 0.3rem; font-family: 'DM Mono', monospace; }
 
-.user-name {
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: var(--text-primary) !important;
-}
-
-.user-meta {
-    font-size: 0.72rem;
-    color: var(--text-muted) !important;
-    font-family: 'DM Mono', monospace !important;
-    margin-top: 0.25rem;
-}
-
-[data-testid="stButton"] button {
-    background: transparent !important;
-    border: 1px solid var(--border) !important;
-    color: var(--text-secondary) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.8rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.06em !important;
-    border-radius: 6px !important;
-    padding: 0.5rem 1rem !important;
-    transition: all 0.15s ease !important;
-    width: 100% !important;
-}
-
-[data-testid="stButton"] button:hover {
-    border-color: var(--accent) !important;
-    color: var(--accent) !important;
-    background: rgba(26, 86, 219, 0.04) !important;
-}
-
-[data-testid="stButton"] button[kind="primary"] {
-    background: var(--accent) !important;
-    border-color: var(--accent) !important;
-    color: #ffffff !important;
-    font-weight: 600 !important;
-}
-
-[data-testid="stButton"] button[kind="primary"]:hover {
-    background: var(--accent-dim) !important;
-    border-color: var(--accent-dim) !important;
-}
-
-[data-testid="stTabs"] [role="tablist"] {
-    background: var(--bg-tertiary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 8px !important;
-    padding: 4px !important;
-    gap: 4px !important;
-}
-
-[data-testid="stTabs"] [role="tab"] {
-    background: transparent !important;
-    color: var(--text-secondary) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.82rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.05em !important;
-    border-radius: 6px !important;
-    border: none !important;
-    padding: 0.5rem 1.2rem !important;
-    transition: all 0.15s !important;
-}
-
-[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    background: var(--bg-secondary) !important;
-    color: var(--accent) !important;
-    border: 1px solid var(--border) !important;
-    font-weight: 600 !important;
-}
-
-[data-testid="stTextInput"] input {
-    background: var(--bg-secondary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 6px !important;
-    color: var(--text-primary) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.875rem !important;
-}
-
-[data-testid="stTextInput"] input:focus {
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1) !important;
-}
-
-.page-header {
-    padding: 2.5rem 0 2rem;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 2rem;
-}
-
-.page-title {
-    font-size: 1.6rem;
-    font-weight: 300;
-    letter-spacing: 0.02em;
-    color: var(--text-primary);
-}
-
-.page-title span {
-    color: var(--accent);
-    font-weight: 600;
-}
-
-.page-subtitle {
-    font-size: 0.78rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    margin-top: 0.3rem;
-    font-family: 'DM Mono', monospace;
-}
-
-.msg-row {
-    display: flex;
-    padding: 1rem 0;
-    border-bottom: 1px solid var(--border-subtle);
-    animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
+.msg-row { display: flex; padding: 1.2rem 0; border-bottom: 1px solid var(--border-subtle); animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 .msg-row.user { flex-direction: row-reverse; }
 
-.msg-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.65rem;
-    font-weight: 600;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    flex-shrink: 0;
-    font-family: 'DM Mono', monospace;
-}
+.msg-avatar { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; flex-shrink: 0; font-family: 'DM Mono', monospace; }
+.msg-avatar.user-av { background: rgba(26,86,219,0.1); color: var(--accent); border: 1px solid rgba(26,86,219,0.2); margin-left: 1rem; }
+.msg-avatar.bot-av { background: var(--bg-tertiary); color: var(--text-muted); border: 1px solid var(--border); margin-right: 1rem; }
 
-.msg-avatar.user-av {
-    background: rgba(26, 86, 219, 0.1);
-    color: var(--accent);
-    border: 1px solid rgba(26, 86, 219, 0.2);
-    margin-left: 1rem;
-}
-
-.msg-avatar.bot-av {
-    background: var(--bg-tertiary);
-    color: var(--text-muted);
-    border: 1px solid var(--border);
-    margin-right: 1rem;
-}
-
-.msg-content { flex: 1; max-width: 72%; }
+.msg-content { flex: 1; max-width: 75%; }
 .msg-row.user .msg-content { text-align: right; }
 
-.msg-text {
-    font-size: 0.9rem;
-    line-height: 1.65;
-    color: var(--text-primary);
-    padding: 0.75rem 1rem;
-    border-radius: 8px;
-    display: inline-block;
-    max-width: 100%;
-    text-align: left;
-}
+.msg-text { font-size: 0.9rem; line-height: 1.7; color: var(--text-primary); padding: 0.8rem 1rem; border-radius: 8px; display: inline-block; max-width: 100%; text-align: left; }
+.msg-row.user .msg-text { background: var(--user-bubble); border: 1px solid rgba(26,86,219,0.15); color: var(--accent-dim); }
+.msg-row.bot .msg-text { background: transparent; border: none; padding-left: 0; }
 
-.msg-row.user .msg-text {
-    background: var(--user-bubble);
-    border: 1px solid rgba(26, 86, 219, 0.15);
-    color: var(--accent-dim);
-}
+audio { margin-top: 0.5rem; height: 32px; border-radius: 6px; width: 100%; max-width: 300px; }
 
-.msg-row.bot .msg-text {
-    background: transparent;
-    border: none;
-    padding-left: 0;
-}
+[data-testid="stChatInput"] { background: var(--bg-secondary) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; box-shadow: var(--shadow) !important; }
+[data-testid="stChatInput"] textarea { background: transparent !important; color: var(--text-primary) !important; font-family: 'DM Sans', sans-serif !important; font-size: 0.875rem !important; }
 
-.msg-time {
-    font-size: 0.65rem;
-    color: var(--text-muted);
-    font-family: 'DM Mono', monospace;
-    margin-top: 0.3rem;
-    display: block;
-}
+[data-testid="stSelectbox"] > div > div { background: var(--bg-secondary) !important; border: 1px solid var(--border) !important; border-radius: 6px !important; color: var(--text-primary) !important; }
+[data-testid="stAudioInput"] { background: var(--bg-tertiary) !important; border: 1px solid var(--border) !important; border-radius: 8px !important; }
 
-audio {
-    margin-top: 0.5rem;
-    height: 32px;
-    border-radius: 6px;
-    width: 100%;
-    max-width: 320px;
-}
-
-[data-testid="stChatInput"] {
-    background: var(--bg-secondary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 8px !important;
-    box-shadow: var(--shadow) !important;
-}
-
-[data-testid="stChatInput"] textarea {
-    background: transparent !important;
-    color: var(--text-primary) !important;
-    font-family: 'DM Sans', sans-serif !important;
-    font-size: 0.875rem !important;
-}
-
-[data-testid="stSelectbox"] > div > div {
-    background: var(--bg-secondary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 6px !important;
-    color: var(--text-primary) !important;
-}
-
-[data-testid="stAudioInput"] {
-    background: var(--bg-tertiary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: 8px !important;
-}
-
-label, [data-testid="stWidgetLabel"] {
-    color: var(--text-secondary) !important;
-    font-size: 0.75rem !important;
-    font-weight: 500 !important;
-    letter-spacing: 0.08em !important;
-    text-transform: uppercase !important;
-}
+label, [data-testid="stWidgetLabel"] { color: var(--text-secondary) !important; font-size: 0.75rem !important; font-weight: 500 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; }
 
 #MainMenu, footer, header { visibility: hidden; }
 [data-testid="stToolbar"] { display: none; }
 
-.section-label {
-    font-size: 0.7rem;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text-muted);
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 0.75rem;
-    margin-top: 1.25rem;
-}
+.section-label { font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); font-family: 'DM Mono', monospace; margin-bottom: 0.75rem; margin-top: 1.25rem; }
 
-.empty-state {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: var(--text-muted);
-}
-
-.empty-state-title {
-    font-size: 1rem;
-    font-weight: 500;
-    color: var(--text-secondary);
-    margin-bottom: 0.5rem;
-}
-
-.empty-state-sub {
-    font-size: 0.8rem;
-    letter-spacing: 0.06em;
-}
+.empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+.empty-state-title { font-size: 1rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.empty-state-sub { font-size: 0.8rem; letter-spacing: 0.06em; }
 </style>
-"""
-
-THEME_DETECT = """
-<script>
-const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-window.parent.postMessage({type: 'theme', dark: dark}, '*');
-</script>
 """
 
 
@@ -841,6 +389,12 @@ class VoiceAIClient:
             return None, None, str(e)
 
 
+def make_user_id(name: str) -> str:
+    uid = re.sub(r'\s+', '_', name.strip().lower())
+    uid = re.sub(r'[^a-z0-9_\u0600-\u06ff]', '', uid)
+    return uid or "user"
+
+
 def init_state():
     defaults = {
         "user_id":      None,
@@ -862,16 +416,11 @@ def add_msg(msg: ChatMessage):
         st.session_state.chat_history = st.session_state.chat_history[-MAX_HISTORY * 2:]
 
 
-def fmt_time(ts: float) -> str:
-    return time.strftime("%H:%M", time.localtime(ts))
-
-
 # ── Main ───────────────────────────────────────────────────────────────────
 st.set_page_config(page_title="VoiceAI", layout="wide", initial_sidebar_state="expanded")
 init_state()
 client = VoiceAIClient(API_URL)
 
-# Inject CSS based on theme toggle
 css = DARK_CSS if st.session_state.dark_mode else LIGHT_CSS
 st.markdown(css, unsafe_allow_html=True)
 
@@ -880,7 +429,6 @@ with st.sidebar:
     st.markdown('<div class="sidebar-brand">VoiceAI</div>', unsafe_allow_html=True)
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
-    # Theme toggle
     theme_label = "Light Mode" if st.session_state.dark_mode else "Dark Mode"
     if st.button(theme_label, use_container_width=True):
         st.session_state.dark_mode = not st.session_state.dark_mode
@@ -888,7 +436,6 @@ with st.sidebar:
 
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
-    # Language
     st.markdown('<div class="section-label">Language</div>', unsafe_allow_html=True)
     lang_keys = list(SUPPORTED_LANGS.keys())
     lang_vals  = list(SUPPORTED_LANGS.values())
@@ -902,25 +449,20 @@ with st.sidebar:
     st.markdown('<div class="sidebar-divider"></div>', unsafe_allow_html=True)
 
     if st.session_state.user_name:
-        initials = st.session_state.user_name[:2].upper()
         st.markdown(f"""
         <div class="user-info-card">
             <div class="user-name">{st.session_state.user_name}</div>
-            <div class="user-meta">ID: {st.session_state.user_id}</div>
             <div class="user-meta">{len(st.session_state.chat_history)} messages</div>
         </div>
         """, unsafe_allow_html=True)
-
         st.markdown('<div class="status-badge"><span class="status-dot"></span>Session Active</div>', unsafe_allow_html=True)
         st.markdown("<br>", unsafe_allow_html=True)
-
         if st.button("Sign Out", use_container_width=True):
             st.session_state.user_id = None
             st.session_state.user_name = None
             st.session_state.chat_history = []
             st.session_state.audio_key += 1
             st.rerun()
-
         if st.button("Clear History", use_container_width=True):
             st.session_state.chat_history = []
             st.rerun()
@@ -931,7 +473,7 @@ with st.sidebar:
 if not st.session_state.user_name:
     st.markdown("""
     <div class="page-header">
-        <div class="page-title">Voice <span>VoiceAI</span></div>
+        <div class="page-title">Voice <span>Intelligence</span></div>
         <div class="page-subtitle">Identify yourself to begin your session</div>
     </div>
     """, unsafe_allow_html=True)
@@ -958,24 +500,19 @@ if not st.session_state.user_name:
                     st.rerun()
 
     with tab_enroll:
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown('<div class="section-label">User ID</div>', unsafe_allow_html=True)
-            uid = st.text_input("", placeholder="e.g. ahmed_01", label_visibility="collapsed")
-        with col2:
-            st.markdown('<div class="section-label">Display Name</div>', unsafe_allow_html=True)
-            name = st.text_input("", placeholder="e.g. Ahmed", label_visibility="collapsed", key="disp_name")
-
+        st.markdown('<div class="section-label">Your Name</div>', unsafe_allow_html=True)
+        name = st.text_input("", placeholder="e.g. Ahmed", label_visibility="collapsed", key="disp_name")
         st.markdown('<div class="section-label">Voice Sample (5-30 seconds)</div>', unsafe_allow_html=True)
         sample = st.audio_input("", key=f"enroll_{st.session_state.enroll_key}", label_visibility="collapsed")
         st.markdown("<br>", unsafe_allow_html=True)
 
         if st.button("Register & Sign In", type="primary", use_container_width=True, key="enroll_submit"):
-            if not uid or not name:
-                st.warning("Please complete all fields.")
+            if not name:
+                st.warning("Please enter your name.")
             elif not sample:
                 st.warning("Please record a voice sample.")
             else:
+                uid = make_user_id(name)
                 with st.spinner("Registering voice profile..."):
                     err = client.enroll(sample.getvalue(), uid, name)
                 if err:
@@ -1003,9 +540,9 @@ else:
         """, unsafe_allow_html=True)
     else:
         for i, msg in enumerate(st.session_state.chat_history):
-            is_user = msg.role == "user"
-            row_cls = "user" if is_user else "bot"
-            av_cls  = "user-av" if is_user else "bot-av"
+            is_user  = msg.role == "user"
+            row_cls  = "user" if is_user else "bot"
+            av_cls   = "user-av" if is_user else "bot-av"
             initials = st.session_state.user_name[:2].upper() if is_user else "AI"
 
             audio_html = ""
@@ -1020,7 +557,6 @@ else:
                 <div class="msg-content">
                     <div class="msg-text">{msg.content}</div>
                     {audio_html}
-                    <span class="msg-time">{fmt_time(msg.timestamp)}</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
