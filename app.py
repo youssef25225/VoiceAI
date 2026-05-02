@@ -4,7 +4,7 @@ import base64
 import re
 from dataclasses import dataclass, field
 from typing import Optional, List, Dict, Tuple
-
+from html import escape
 import streamlit as st
 import requests
 
@@ -555,7 +555,7 @@ else:
             <div class="msg-row {row_cls}">
                 <div class="msg-avatar {av_cls}">{initials}</div>
                 <div class="msg-content">
-                    <div class="msg-text">{msg.content}</div>
+                    <div class="msg-text">{escape(msg.content)}</div>
                     {audio_html}
                 </div>
             </div>
