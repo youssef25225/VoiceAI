@@ -9,7 +9,7 @@ from html import escape
 import streamlit as st
 import requests
 
-API_URL         = "https://b27d-34-124-173-175.ngrok-free.app"
+API_URL         = "https://b27d-34-124-173-175.ngrok-free.app"  # ← ngrok URL
 MAX_HISTORY     = 20
 REQUEST_TIMEOUT = 120
 LANG            = "ar"
@@ -196,11 +196,15 @@ class VoiceAIClient:
         self.session  = requests.Session()
         self.session.headers.update({"Accept": "application/json"})
 
-    def chat(self, history: List[Dict]) -> Tuple[Optional[bytes], Optional[str], Optional[str]]:
+    def chat(self, history: List[Dict], user_name: str = None) -> Tuple[Optional[bytes], Optional[str], Optional[str]]:
         try:
+            payload = {"history": history}
+            if user_name:
+                payload["user_name"] = user_name
+
             r = self.session.post(
-                f"{self.base_url}/text",
-                json={"history": history, "lang": LANG, "user_id": "guest"},
+                f"{self.base_url}/chat",  # ← /chat بدل /text
+                json=payload,
                 timeout=REQUEST_TIMEOUT,
             )
             r.raise_for_status()
@@ -220,7 +224,10 @@ class VoiceAIClient:
 
 
 def init_state():
-    defaults = {"chat_history": []}
+    defaults = {
+        "chat_history": [],
+        "user_name": None,
+    }
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
@@ -278,6 +285,13 @@ with st.sidebar:
     )
     st.markdown("<br>", unsafe_allow_html=True)
 
+    # اسم اليوزر (اختياري — بيتبعت للـ LLM عشان سامح يناديه بالاسم)
+    user_name_input = st.text_input("اسمك (اختياري)", value=st.session_state.user_name or "")
+    if user_name_input.strip():
+        st.session_state.user_name = user_name_input.strip()
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
     msg_count = len(st.session_state.chat_history)
     st.markdown(
         f'<div style="font-size:0.75rem;color:var(--text-muted);font-family:\'DM Mono\',monospace">'
@@ -315,7 +329,10 @@ if prompt and prompt.strip():
     add_msg(ChatMessage(role="user", content=prompt.strip()))
     history = [m.to_api_dict() for m in st.session_state.chat_history[-MAX_HISTORY:]]
     with st.spinner(""):
-        audio_bytes, text_reply, error = client.chat(history)
+        audio_bytes, text_reply, error = client.chat(
+            history,
+            user_name=st.session_state.user_name,
+        )
     if error:
         add_msg(ChatMessage(role="assistant", content=error, error=True))
     elif audio_bytes or text_reply:
