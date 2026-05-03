@@ -294,7 +294,7 @@ with st.sidebar:
 st.markdown("""
 <div class="page-header">
     <div class="page-title">Voice <span>AI</span></div>
-    <div class="page-subtitle">Powered by Sameh Al-Ansary</div>
+    <div class="page-subtitle">Talk with Dr Sameh Al-Ansary</div>
 </div>
 """, unsafe_allow_html=True)
 
