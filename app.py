@@ -9,7 +9,7 @@ from html import escape
 import streamlit as st
 import requests
 
-API_URL         = "https://d83a-34-124-173-175.ngrok-free.app"  # ← ngrok URL
+API_URL         = "https://b27d-34-124-173-175.ngrok-free.app"  # ← ngrok URL
 MAX_HISTORY     = 20
 REQUEST_TIMEOUT = 120
 LANG            = "ar"
@@ -194,7 +194,7 @@ class VoiceAIClient:
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip("/")
         self.session  = requests.Session()
-        self.session.headers.update({"Accept": "application/json"})
+        self.session.headers.update({"Accept": "application/json", "ngrok-skip-browser-warning": "true"})
 
     def chat(self, history: List[Dict], user_name: str = None) -> Tuple[Optional[bytes], Optional[str], Optional[str]]:
         try:
