@@ -9,7 +9,7 @@ from html import escape
 import streamlit as st
 import requests
 
-API_URL = "https://6bf5-34-124-173-175.ngrok-free.app"
+API_URL = "https://90b6-34-50-181-193.ngrok-free.app/"
 MAX_HISTORY     = 20
 REQUEST_TIMEOUT = 120
 LANG            = "ar"
