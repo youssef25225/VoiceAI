@@ -360,30 +360,38 @@ class VoiceAIClient:
             )
             r.raise_for_status()
 
-            if not r.content or not r.content.strip():
+            if not r.content:
                 return None, None, "Server returned an empty response."
 
             content_type = r.headers.get("Content-Type", "")
-            if "application/json" not in content_type:
-                return None, None, f"Unexpected content type: {content_type}. Body: {r.text[:200]}"
 
-            data = r.json()
+            if "audio/wav" in content_type or r.content[:4] == b"RIFF":
+                reply_text = (
+                    r.headers.get("X-Reply")
+                    or r.headers.get("X-Text")
+                    or r.headers.get("X-Response")
+                    or ""
+                )
+                return r.content, reply_text, None
 
-            if "error" in data:
-                return None, None, data["error"]
+            if "application/json" in content_type:
+                data = r.json()
+                if "error" in data:
+                    return None, None, data["error"]
+                audio_hex = data.get("audio")
+                audio = bytes.fromhex(audio_hex) if audio_hex else None
+                text = data.get("reply") or data.get("text") or data.get("response")
+                return audio, text, None
 
-            audio_hex = data.get("audio")
-            audio = bytes.fromhex(audio_hex) if audio_hex else None
-            text = data.get("reply") or data.get("text") or data.get("response")
-            return audio, text, None
+            return None, None, f"Unhandled content type: {content_type}"
 
         except requests.exceptions.JSONDecodeError as e:
-            return None, None, f"Invalid JSON from server: {e}. Raw: {r.text[:300]}"
+            return None, None, f"Invalid JSON: {e}"
         except requests.exceptions.Timeout:
             return None, None, "Request timed out. Please try again."
         except requests.exceptions.ConnectionError:
             return None, None, "Cannot connect to server. Check your connection."
-        except requests.exceptions.HTTPError as e:
+        except requests.exceptions.HTTPError:
             return None, None, f"HTTP {r.status_code}: {r.text[:200]}"
         except Exception as e:
             return None, None, str(e)
@@ -523,9 +531,10 @@ if prompt and prompt.strip():
     if error:
         add_message(ChatMessage(role="assistant", content=f"⚠ {error}", error=True))
     elif audio_bytes or text_reply:
+        display_text = text_reply.strip() if text_reply and text_reply.strip() else "🔊 استمع للرد الصوتي"
         add_message(ChatMessage(
             role="assistant",
-            content=text_reply or "*(voice response)*",
+            content=display_text,
             audio=audio_bytes,
         ))
     else:
