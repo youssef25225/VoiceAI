@@ -468,9 +468,7 @@ with st.sidebar:
     )
     st.markdown("<br>", unsafe_allow_html=True)
 
-    user_name_input = st.text_input("اسمك (اختياري)", value=st.session_state.user_name or "")
-    if user_name_input.strip():
-        st.session_state.user_name = user_name_input.strip()
+
 
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
