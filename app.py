@@ -528,8 +528,8 @@ if prompt and prompt.strip():
 
     if error:
         add_message(ChatMessage(role="assistant", content=f"⚠ {error}", error=True))
-    elif audio_bytes or text_reply:
-        display_text = text_reply.strip() if text_reply and text_reply.strip() else "🔊 استمع للرد الصوتي"
+    # elif audio_bytes or text_reply:
+    #     display_text = text_reply.strip() if text_reply and text_reply.strip() else "🔊 استمع للرد الصوتي"
         add_message(ChatMessage(
             role="assistant",
             content=display_text,
