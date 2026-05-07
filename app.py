@@ -494,8 +494,8 @@ with st.sidebar:
 
 st.markdown(
     '<div class="page-header">'
-    '  <div class="page-title">Talk with <strong>Dr. Sameh Al-Ansary</strong></div>'
-    '  <div class="page-subtitle">Arabic Voice AI · Powered by HuggingFace</div>'
+    '  <div class="page-title">Talk with <strong>الدحيح</strong></div>'
+
     '</div>',
     unsafe_allow_html=True,
 )
