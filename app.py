@@ -329,9 +329,29 @@ class ChatMessage:
     audio: Optional[bytes] = None
     timestamp: float = field(default_factory=time.time)
     error: bool = False
+    # ✅ FIX 1: cache base64 so we don't re-encode on every render
+    _audio_b64: Optional[str] = field(default=None, repr=False)
 
     def to_api_dict(self) -> Dict[str, str]:
         return {"role": self.role, "content": self.content}
+
+    @property
+    def audio_b64(self) -> str:
+        if self._audio_b64 is None and self.audio:
+            self._audio_b64 = base64.b64encode(self.audio).decode()
+        return self._audio_b64 or ""
+
+
+# ✅ FIX 2: cache the client — built once per session, not on every rerun
+@st.cache_resource
+def get_client() -> "VoiceAIClient":
+    return VoiceAIClient(API_URL)
+
+
+# ✅ FIX 3: cache CSS — sent once, not on every rerun
+@st.cache_data
+def get_css() -> str:
+    return CSS
 
 
 class VoiceAIClient:
@@ -415,42 +435,56 @@ def format_time(ts: float) -> str:
     return time.strftime("%H:%M", time.localtime(ts))
 
 
-def render_message(msg: ChatMessage, is_last: bool):
-    is_user = msg.role == "user"
-    initials = "أنت" if is_user else "AI"
-    av_cls = "user-av" if is_user else "bot-av"
-    row_cls = "user" if is_user else f"bot{'  error' if msg.error else ''}"
-    safe_text = escape(msg.content)
-    ts = format_time(msg.timestamp)
+# ✅ FIX 4: build all messages as one HTML string → single st.markdown call
+#    instead of one call per message (was O(n) markdown calls → now O(1))
+def render_all_messages(messages: List[ChatMessage]) -> str:
+    if not messages:
+        return ""
 
-    audio_html = ""
-    if msg.audio and not is_user:
-        b64 = base64.b64encode(msg.audio).decode()
-        auto = "autoplay" if is_last else ""
-        audio_html = (
-            f'<audio {auto} controls>'
-            f'<source src="data:audio/wav;base64,{b64}" type="audio/wav">'
-            f'</audio>'
+    parts: List[str] = []
+    total = len(messages)
+
+    for i, msg in enumerate(messages):
+        is_user = msg.role == "user"
+        is_last = i == total - 1
+        initials = "أنت" if is_user else "AI"
+        av_cls = "user-av" if is_user else "bot-av"
+        row_cls = "user" if is_user else f"bot{'  error' if msg.error else ''}"
+        safe_text = escape(msg.content)
+        ts = format_time(msg.timestamp)
+
+        audio_html = ""
+        if msg.audio and not is_user:
+            auto = "autoplay" if is_last else ""
+            audio_html = (
+                f'<audio {auto} controls>'
+                f'<source src="data:audio/wav;base64,{msg.audio_b64}" type="audio/wav">'
+                f'</audio>'
+            )
+
+        parts.append(
+            f'<div class="msg-wrap {row_cls}">'
+            f'  <div class="avatar {av_cls}">{initials}</div>'
+            f'  <div class="msg-body">'
+            f'    <div class="bubble">{safe_text}</div>'
+            f'    {audio_html}'
+            f'    <div class="meta">{ts}</div>'
+            f'  </div>'
+            f'</div>'
         )
 
-    st.markdown(
-        f'<div class="msg-wrap {row_cls}">'
-        f'  <div class="avatar {av_cls}">{initials}</div>'
-        f'  <div class="msg-body">'
-        f'    <div class="bubble">{safe_text}</div>'
-        f'    {audio_html}'
-        f'    <div class="meta">{ts}</div>'
-        f'  </div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
+    return "".join(parts)
 
+
+# ── App bootstrap ──────────────────────────────────────────────────────────────
 
 st.set_page_config(page_title="VoiceAI", layout="wide", initial_sidebar_state="expanded")
 init_state()
-st.markdown(CSS, unsafe_allow_html=True)
+st.markdown(get_css(), unsafe_allow_html=True)   # cached
 
-client = VoiceAIClient(API_URL)
+client = get_client()                             # cached (single session)
+
+# ── Sidebar ────────────────────────────────────────────────────────────────────
 
 with st.sidebar:
     st.markdown(
@@ -461,15 +495,11 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
-
     st.markdown(
         '<div class="badge"><span class="badge-dot"></span>Session Active</div>',
         unsafe_allow_html=True,
     )
     st.markdown("<br>", unsafe_allow_html=True)
-
-
-
     st.markdown('<div class="divider"></div>', unsafe_allow_html=True)
 
     msg_count = len(st.session_state.chat_history)
@@ -492,27 +522,33 @@ with st.sidebar:
         st.session_state.chat_history = []
         st.rerun()
 
+# ── Main area ──────────────────────────────────────────────────────────────────
+
 st.markdown(
     '<div class="page-header">'
     '  <div class="page-title">Talk with <strong>الدحيح</strong></div>'
-
     '</div>',
     unsafe_allow_html=True,
 )
 
-if not st.session_state.chat_history:
-    st.markdown(
-        '<div class="empty-state">'
-        '  <div class="empty-icon">🎙️</div>'
-        '  <div class="empty-title">جاهز للكلام</div>'
-        '  <div class="empty-sub">اكتب رسالتك وابدأ المحادثة</div>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-else:
-    total = len(st.session_state.chat_history)
-    for i, msg in enumerate(st.session_state.chat_history):
-        render_message(msg, is_last=(i == total - 1))
+# ✅ FIX 5: one container — messages rendered as single HTML block
+chat_area = st.container()
+
+with chat_area:
+    if not st.session_state.chat_history:
+        st.markdown(
+            '<div class="empty-state">'
+            '  <div class="empty-icon">🎙️</div>'
+            '  <div class="empty-title">جاهز للكلام</div>'
+            '  <div class="empty-sub">اكتب رسالتك وابدأ المحادثة</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        # single markdown call for ALL messages
+        st.markdown(render_all_messages(st.session_state.chat_history), unsafe_allow_html=True)
+
+# ── Input ──────────────────────────────────────────────────────────────────────
 
 prompt = st.chat_input("اكتب رسالتك...")
 if prompt and prompt.strip():
