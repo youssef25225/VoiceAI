@@ -329,7 +329,6 @@ class ChatMessage:
     audio: Optional[bytes] = None
     timestamp: float = field(default_factory=time.time)
     error: bool = False
-    # ✅ FIX 1: cache base64 so we don't re-encode on every render
     _audio_b64: Optional[str] = field(default=None, repr=False)
 
     def to_api_dict(self) -> Dict[str, str]:
@@ -342,13 +341,11 @@ class ChatMessage:
         return self._audio_b64 or ""
 
 
-# ✅ FIX 2: cache the client — built once per session, not on every rerun
 @st.cache_resource
 def get_client() -> "VoiceAIClient":
     return VoiceAIClient(API_URL)
 
 
-# ✅ FIX 3: cache CSS — sent once, not on every rerun
 @st.cache_data
 def get_css() -> str:
     return CSS
@@ -435,8 +432,6 @@ def format_time(ts: float) -> str:
     return time.strftime("%H:%M", time.localtime(ts))
 
 
-# ✅ FIX 4: build all messages as one HTML string → single st.markdown call
-#    instead of one call per message (was O(n) markdown calls → now O(1))
 def render_all_messages(messages: List[ChatMessage]) -> str:
     if not messages:
         return ""
@@ -447,7 +442,7 @@ def render_all_messages(messages: List[ChatMessage]) -> str:
     for i, msg in enumerate(messages):
         is_user = msg.role == "user"
         is_last = i == total - 1
-        initials = "أنت" if is_user else "AI"
+        initials = "أنت" if is_user else "الدحيح"
         av_cls = "user-av" if is_user else "bot-av"
         row_cls = "user" if is_user else f"bot{'  error' if msg.error else ''}"
         safe_text = escape(msg.content)
@@ -476,20 +471,16 @@ def render_all_messages(messages: List[ChatMessage]) -> str:
     return "".join(parts)
 
 
-# ── App bootstrap ──────────────────────────────────────────────────────────────
-
 st.set_page_config(page_title="VoiceAI", layout="wide", initial_sidebar_state="expanded")
 init_state()
-st.markdown(get_css(), unsafe_allow_html=True)   # cached
+st.markdown(get_css(), unsafe_allow_html=True)
 
-client = get_client()                             # cached (single session)
-
-# ── Sidebar ────────────────────────────────────────────────────────────────────
+client = get_client()
 
 with st.sidebar:
     st.markdown(
         '<div class="brand">'
-        '<div class="brand-icon">🎙</div>'
+        '<div class="brand-icon">AI</div>'
         '<div class="brand-name">VoiceAI</div>'
         '</div>',
         unsafe_allow_html=True,
@@ -518,11 +509,9 @@ with st.sidebar:
     )
     st.markdown("<br>", unsafe_allow_html=True)
 
-    if st.button("🗑 Clear Conversation", use_container_width=True):
+    if st.button("Clear Conversation", use_container_width=True):
         st.session_state.chat_history = []
         st.rerun()
-
-# ── Main area ──────────────────────────────────────────────────────────────────
 
 st.markdown(
     '<div class="page-header">'
@@ -531,24 +520,20 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ✅ FIX 5: one container — messages rendered as single HTML block
 chat_area = st.container()
 
 with chat_area:
     if not st.session_state.chat_history:
         st.markdown(
             '<div class="empty-state">'
-            '  <div class="empty-icon">🎙️</div>'
+            '  <div class="empty-icon">*</div>'
             '  <div class="empty-title">جاهز للكلام</div>'
             '  <div class="empty-sub">اكتب رسالتك وابدأ المحادثة</div>'
             '</div>',
             unsafe_allow_html=True,
         )
     else:
-        # single markdown call for ALL messages
         st.markdown(render_all_messages(st.session_state.chat_history), unsafe_allow_html=True)
-
-# ── Input ──────────────────────────────────────────────────────────────────────
 
 prompt = st.chat_input("اكتب رسالتك...")
 if prompt and prompt.strip():
@@ -563,7 +548,7 @@ if prompt and prompt.strip():
         )
 
     if error:
-        add_message(ChatMessage(role="assistant", content=f"⚠ {error}", error=True))
+        add_message(ChatMessage(role="assistant", content=f"Error: {error}", error=True))
     elif audio_bytes or text_reply:
         display_text = text_reply.strip() if text_reply and text_reply.strip() else ""
         add_message(ChatMessage(
@@ -572,6 +557,6 @@ if prompt and prompt.strip():
             audio=audio_bytes,
         ))
     else:
-        add_message(ChatMessage(role="assistant", content="⚠ No response received.", error=True))
+        add_message(ChatMessage(role="assistant", content="No response received.", error=True))
 
     st.rerun()
