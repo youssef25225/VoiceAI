@@ -526,7 +526,7 @@ with chat_area:
     if not st.session_state.chat_history:
         st.markdown(
             '<div class="empty-state">'
-            '  <div class="empty-icon">*</div>'
+            '  <div class="empty-icon"></div>'
             '  <div class="empty-title">جاهز للكلام</div>'
             '  <div class="empty-sub">اكتب رسالتك وابدأ المحادثة</div>'
             '</div>',
