@@ -1,4 +1,5 @@
 import base64
+import hashlib
 import time
 from dataclasses import dataclass, field
 from html import escape
@@ -351,6 +352,11 @@ def get_css() -> str:
     return CSS
 
 
+def _prompt_hash(text: str) -> str:
+    """Stable hash for a prompt string used for dedup checks."""
+    return hashlib.md5(text.encode()).hexdigest()
+
+
 class VoiceAIClient:
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip("/")
@@ -415,7 +421,14 @@ class VoiceAIClient:
 
 
 def init_state():
-    defaults = {"chat_history": [], "user_name": None}
+    defaults = {
+        "chat_history": [],
+        "user_name": None,
+        # --- anti-duplicate guards ---
+        "is_processing": False,       # True while a backend request is in-flight
+        "last_prompt_hash": None,     # hash of the last prompt we actually sent
+        "pending_autoplay_id": None,  # id() of the msg whose audio should autoplay
+    }
     for k, v in defaults.items():
         if k not in st.session_state:
             st.session_state[k] = v
@@ -437,11 +450,11 @@ def render_all_messages(messages: List[ChatMessage]) -> str:
         return ""
 
     parts: List[str] = []
-    total = len(messages)
+    # The id of the message that should autoplay — set once, consumed once
+    autoplay_id = st.session_state.get("pending_autoplay_id")
 
-    for i, msg in enumerate(messages):
+    for msg in messages:
         is_user = msg.role == "user"
-        is_last = i == total - 1
         initials = "أنت" if is_user else "الدحيح"
         av_cls = "user-av" if is_user else "bot-av"
         row_cls = "user" if is_user else f"bot{'  error' if msg.error else ''}"
@@ -450,7 +463,9 @@ def render_all_messages(messages: List[ChatMessage]) -> str:
 
         audio_html = ""
         if msg.audio and not is_user:
-            auto = "autoplay" if is_last else ""
+            # Only autoplay if this specific message is the pending one
+            should_autoplay = (id(msg) == autoplay_id)
+            auto = "autoplay" if should_autoplay else ""
             audio_html = (
                 f'<audio {auto} controls>'
                 f'<source src="data:audio/wav;base64,{msg.audio_b64}" type="audio/wav">'
@@ -471,12 +486,15 @@ def render_all_messages(messages: List[ChatMessage]) -> str:
     return "".join(parts)
 
 
+# ── App ────────────────────────────────────────────────────────────────────────
+
 st.set_page_config(page_title="VoiceAI", layout="wide", initial_sidebar_state="expanded")
 init_state()
 st.markdown(get_css(), unsafe_allow_html=True)
 
 client = get_client()
 
+# ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown(
         '<div class="brand">'
@@ -511,8 +529,12 @@ with st.sidebar:
 
     if st.button("Clear Conversation", use_container_width=True):
         st.session_state.chat_history = []
+        st.session_state.is_processing = False
+        st.session_state.last_prompt_hash = None
+        st.session_state.pending_autoplay_id = None
         st.rerun()
 
+# ── Header ─────────────────────────────────────────────────────────────────────
 st.markdown(
     '<div class="page-header">'
     '  <div class="page-title">Talk with <strong>الدحيح</strong></div>'
@@ -520,6 +542,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# ── Chat area ──────────────────────────────────────────────────────────────────
 chat_area = st.container()
 
 with chat_area:
@@ -534,10 +557,29 @@ with chat_area:
         )
     else:
         st.markdown(render_all_messages(st.session_state.chat_history), unsafe_allow_html=True)
+        # Clear the autoplay flag after rendering so subsequent reruns don't replay
+        st.session_state.pending_autoplay_id = None
 
-prompt = st.chat_input("اكتب رسالتك...")
+# ── Input handling ─────────────────────────────────────────────────────────────
+prompt = st.chat_input("اكتب رسالتك...", disabled=st.session_state.is_processing)
+
 if prompt and prompt.strip():
-    add_message(ChatMessage(role="user", content=prompt.strip()))
+    clean_prompt = prompt.strip()
+    prompt_hash = _prompt_hash(clean_prompt)
+
+    # Guard 1: reject if already processing a request
+    if st.session_state.is_processing:
+        st.stop()
+
+    # Guard 2: reject duplicate consecutive submission
+    if prompt_hash == st.session_state.last_prompt_hash:
+        st.stop()
+
+    # ── All guards passed — process the message ────────────────────────────
+    st.session_state.is_processing = True
+    st.session_state.last_prompt_hash = prompt_hash
+
+    add_message(ChatMessage(role="user", content=clean_prompt))
 
     history = [m.to_api_dict() for m in st.session_state.chat_history[-MAX_HISTORY:]]
 
@@ -548,15 +590,22 @@ if prompt and prompt.strip():
         )
 
     if error:
-        add_message(ChatMessage(role="assistant", content=f"Error: {error}", error=True))
+        bot_msg = ChatMessage(role="assistant", content=f"Error: {error}", error=True)
+        add_message(bot_msg)
     elif audio_bytes or text_reply:
         display_text = text_reply.strip() if text_reply and text_reply.strip() else ""
-        add_message(ChatMessage(
+        bot_msg = ChatMessage(
             role="assistant",
             content=display_text,
             audio=audio_bytes,
-        ))
+        )
+        add_message(bot_msg)
+        # Mark exactly this message for one-time autoplay
+        st.session_state.pending_autoplay_id = id(bot_msg)
     else:
-        add_message(ChatMessage(role="assistant", content="No response received.", error=True))
+        bot_msg = ChatMessage(role="assistant", content="No response received.", error=True)
+        add_message(bot_msg)
 
+    # Release the lock before rerunning
+    st.session_state.is_processing = False
     st.rerun()
